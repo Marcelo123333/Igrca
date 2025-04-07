@@ -3,8 +3,9 @@ using namespace std;
 #include <SDL.h>
 #include <iostream>
 #include <stdio.h>
-#include  <SDL_image.h>
+#include <SDL_image.h>
 #include <vector>
+#include "Vector2D.h"
 #ifndef GAME_H
 #define GAME_H
 
@@ -21,7 +22,8 @@ public:
     void render();
     void clean();
 
-    static void AddTile(int id, int x, int y);
+    // New method for collision handling
+    void handleCollisions(Vector2D oldPlayerPos);
 
     bool running() { return isRunning; }
     static SDL_Event event;
@@ -33,7 +35,5 @@ private:
     bool isRunning;
     SDL_Window *window;
 };
-
-
 
 #endif //GAME_H
