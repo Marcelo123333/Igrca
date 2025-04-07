@@ -1,0 +1,3 @@
+C:/Users/HELP404/CLionProjects/Igrica/cmake-build-debug/CMakeFiles/Igrica.dir
+C:/Users/HELP404/CLionProjects/Igrica/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/HELP404/CLionProjects/Igrica/cmake-build-debug/CMakeFiles/rebuild_cache.dir
