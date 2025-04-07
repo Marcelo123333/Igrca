@@ -16,19 +16,19 @@ public:
     Game();
     ~Game();
     void init(const char* title, int width, int height, bool fullscreen);
-
     void handleEvents();
     void update();
     void render();
     void clean();
-
-    // New method for collision handling
     void handleCollisions(Vector2D oldPlayerPos);
 
     bool running() { return isRunning; }
     static SDL_Event event;
     static SDL_Renderer* renderer;
     static vector<ColliderComponent*> colliders;
+
+    // Add a camera rectangle
+    static SDL_Rect camera;
 
 private:
     int cnt = 0;

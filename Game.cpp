@@ -18,7 +18,7 @@ auto& player(manager.addEntity());
 auto& tile0(manager.addEntity());
 auto& tile1(manager.addEntity());
 
-
+SDL_Rect Game::camera = { 0, 0, 800, 640 };
 Game::Game()
 {}
 Game::~Game()
@@ -73,14 +73,17 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-
     auto& playerTransform = player.getComponent<TransformComponent>();
     Vector2D oldPlayerPos = playerTransform.position;
-
 
     manager.refresh();
     manager.update();
 
+    // Update camera to center on the player
+    Game::camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - Game::camera.w / 2);
+    Game::camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - Game::camera.h / 2);
+
+    // Optional: Clamp camera values so it doesn’t go out of your map boundaries
 
     handleCollisions(oldPlayerPos);
 }
