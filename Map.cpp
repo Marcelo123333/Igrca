@@ -1,42 +1,23 @@
-#include "Map.h"
-#include "TextureManager.h"
 #include "ESC/ColliderComponent.h"
 #include "ESC/TransformComponent.h"
-
-// Hardcoded level map with walls(1) and floors(0)
-int lvl1[20][25] = {
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-};
+#include "Map.h"
+#include "TextureManager.h"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <iterator>
 
 Map::Map() {
-    zid = TextureManager::LoadTexture("Assets/Zid.png");
     tla = TextureManager::LoadTexture("Assets/Tla.png");
+    zid = TextureManager::LoadTexture("Assets/Zid.png");
 
+    // Load the map from the text file instead of a hardcoded array
     LoadMap();
 
+    // Initialize source and destination rectangles for tile drawing
     src.x = src.y = 0;
     src.w = dest.w = 32;
     src.h = dest.h = 32;
-
     dest.x = dest.y = 0;
 }
 
@@ -46,21 +27,37 @@ Map::~Map() {
 }
 
 void Map::LoadMap() {
-    // Copy the hardcoded level map to our map array
-    for(int row = 0; row < 20; row++) {
-        for(int column = 0; column < 25; column++) {
-            map[row][column] = lvl1[row][column];
-        }
+    std::ifstream mapFile("Mape/map1.txt"); // Adjust the file path if needed
+    if (!mapFile.is_open()) {
+        std::cout << "Unable to open map file!" << std::endl;
+        return;
     }
+
+    std::string line;
+    int row = 0;
+    while (std::getline(mapFile, line) && row < 20) {
+        int col = 0;
+        // Loop through each character in the line
+        for (char c : line) {
+            // Check if the character is a digit
+            if (isdigit(c) && col < 25) {
+                // Convert character to integer (assuming single-digit numbers)
+                map[row][col] = c - '0';
+                col++;
+            }
+        }
+        row++;
+    }
+    mapFile.close();
 }
+
 
 void Map::DrawMap() {
     int type = 0;
-
-    for(int row = 0; row < 20; row++) {
-        for(int column = 0; column < 25; column++) {
+    // Draw the map based on the values in the map array
+    for (int row = 0; row < 20; row++) {
+        for (int column = 0; column < 25; column++) {
             type = map[row][column];
-
             dest.x = column * 32;
             dest.y = row * 32;
 
@@ -79,9 +76,10 @@ void Map::DrawMap() {
 }
 
 void Map::CreateWallColliders(Manager& manager) {
-    for(int row = 0; row < 20; row++) {
-        for(int column = 0; column < 25; column++) {
-            if(map[row][column] == 1) { // If it's a wall
+    // Iterate through the map array to create colliders for wall tiles (value 1)
+    for (int row = 0; row < 20; row++) {
+        for (int column = 0; column < 25; column++) {
+            if (map[row][column] == 1) { // If it's a wall
                 auto& wall(manager.addEntity());
 
                 // Add transform and collider components
@@ -92,7 +90,7 @@ void Map::CreateWallColliders(Manager& manager) {
                 );
                 wall.addComponent<ColliderComponent>("wall");
 
-                // Initialize the components
+                // Initialize the components immediately
                 wall.getComponent<TransformComponent>().update();
                 wall.getComponent<ColliderComponent>().update();
             }

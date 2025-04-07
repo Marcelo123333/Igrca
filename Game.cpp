@@ -47,9 +47,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         }
         isRunning = true;
     }
+
     map = new Map();
-
-
     map->LoadMap();
     map->CreateWallColliders(manager);
 
