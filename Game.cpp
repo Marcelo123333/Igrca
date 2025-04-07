@@ -29,22 +29,22 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     int flags = 0;
     if(fullscreen) {
         flags = SDL_WINDOW_FULLSCREEN;
+    } else {
+        flags = SDL_WINDOW_RESIZABLE;  // Make the window resizable
     }
 
     if(SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-        cout<<"Subsystems Initialized!!"<<endl;
-
-        window = SDL_CreateWindow(title,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED, width, height, flags);
+        cout << "Subsystems Initialized!!" << endl;
+        window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
         renderer = SDL_CreateRenderer(window, -1, 0);
         if(window) {
-            cout<<"Window Created!"<<endl;
+            cout << "Window Created!" << endl;
         }
-
         if(renderer) {
-            SDL_SetRenderDrawColor(renderer, 0,255,255,255);
-            cout<<"Renderer Created!"<<endl;
+            SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+            SDL_RenderSetLogicalSize(renderer, 800, 640);  // Set your desired logical size here
+            cout << "Renderer Created!" << endl;
         }
-
         isRunning = true;
     }
     map = new Map();
@@ -66,7 +66,17 @@ void Game::handleEvents() {
         case SDL_QUIT:
             isRunning = false;
         break;
+        case SDL_WINDOWEVENT:
+            if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                int newWidth = event.window.data1;
+                int newHeight = event.window.data2;
+                SDL_RenderSetLogicalSize(renderer, newWidth, newHeight);
 
+                // Update the camera dimensions to match the new logical size
+                Game::camera.w = newWidth;
+                Game::camera.h = newHeight;
+            }
+        break;
         default:
             break;
     }
