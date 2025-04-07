@@ -35,12 +35,12 @@ void Map::LoadMap() {
 
     std::string line;
     int row = 0;
-    while (std::getline(mapFile, line) && row < 20) {
+    while (std::getline(mapFile, line) && row < 100) {
         int col = 0;
         // Loop through each character in the line
         for (char c : line) {
             // Check if the character is a digit
-            if (isdigit(c) && col < 25) {
+            if (isdigit(c) && col < 100) {
                 // Convert character to integer (assuming single-digit numbers)
                 map[row][col] = c - '0';
                 col++;
@@ -55,8 +55,8 @@ void Map::LoadMap() {
 void Map::DrawMap() {
     int type = 0;
     // Draw the map based on the values in the map array
-    for (int row = 0; row < 20; row++) {
-        for (int column = 0; column < 25; column++) {
+    for (int row = 0; row < 100; row++) {
+        for (int column = 0; column < 100; column++) {
             type = map[row][column];
             dest.x = column * 32;
             dest.y = row * 32;
@@ -77,8 +77,8 @@ void Map::DrawMap() {
 
 void Map::CreateWallColliders(Manager& manager) {
     // Iterate through the map array to create colliders for wall tiles (value 1)
-    for (int row = 0; row < 20; row++) {
-        for (int column = 0; column < 25; column++) {
+    for (int row = 0; row < 100; row++) {
+        for (int column = 0; column < 100; column++) {
             if (map[row][column] == 1) { // If it's a wall
                 auto& wall(manager.addEntity());
 

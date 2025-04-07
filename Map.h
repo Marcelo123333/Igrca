@@ -18,7 +18,7 @@ private:
     SDL_Texture* tla;
     SDL_Texture* zid;
 
-    int map[20][25];
+    int map[100][100];
 };
 
 #ifndef MAP_H
