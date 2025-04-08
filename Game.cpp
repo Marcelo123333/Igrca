@@ -61,57 +61,66 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 }
 
 void Game::handleEvents() {
-    SDL_PollEvent(&event);
-    switch (event.type) {
-        case SDL_QUIT:
-            isRunning = false;
-            break;
-        case SDL_MOUSEBUTTONDOWN: {
-            // Get the click position (mouse coordinates)
-            int mouseX = event.button.x;
-            int mouseY = event.button.y;
-            // Adjust for camera offset so that we work in world coordinates
-            mouseX += camera.x;
-            mouseY += camera.y;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                isRunning = false;
+                break;
 
-            // Get player's center position
-            auto& playerTransform = player.getComponent<TransformComponent>();
-            float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
-            float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
+            case SDL_MOUSEBUTTONDOWN: {
+                // Convert mouse coordinates to world coordinates by applying camera offset
+                int mouseX = event.button.x + camera.x;
+                int mouseY = event.button.y + camera.y;
 
-            // Compute the direction vector from player to mouse click
-            float dx = mouseX - playerCenterX;
-            float dy = mouseY - playerCenterY;
-            float length = std::sqrt(dx * dx + dy * dy);
-            Vector2D direction = {0,0};
-            if (length != 0) {
-                direction.x = dx / length;
-                direction.y = dy / length;
+                // Get the player's center from its TransformComponent
+                auto& playerTransform = player.getComponent<TransformComponent>();
+                float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
+                float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
+
+                // Calculate the direction vector from the player to the mouse click
+                float dx = mouseX - playerCenterX;
+                float dy = mouseY - playerCenterY;
+                float length = std::sqrt(dx * dx + dy * dy);
+                Vector2D direction = {0, 0};
+                if (length != 0) {
+                    direction.x = dx / length;
+                    direction.y = dy / length;
+                }
+
+                // Offset the bullet's starting position away from the player.
+                // For example, use half the player's width plus an extra margin.
+                float spawnOffset = playerTransform.width / 2 + 10; // 10 pixels extra
+                float bulletStartX = playerCenterX + direction.x * spawnOffset;
+                float bulletStartY = playerCenterY + direction.y * spawnOffset;
+
+                // Create a new bullet entity
+                auto& bullet = manager.addEntity();
+
+                // Set the bullet's starting position to the offset coordinates;
+                // assume bullet size is 16x16 pixels
+                bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 16, 16, 1);
+                // Add the sprite (make sure "Assets/Bullet.png" exists)
+                bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
+                // Add the BulletComponent:
+                // Speed is 5.0f, maxDistance is 7 tiles (7*32 = 224 pixels).
+                bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
+
+                break;
             }
 
-            // Create a new bullet entity
-            auto& bullet = manager.addEntity();
-            // Set bullet's starting position at player's center. Here, bullet size is 16x16.
-            bullet.addComponent<TransformComponent>(playerCenterX, playerCenterY, 16, 16, 1);
-            // Optionally add a sprite. Make sure "Assets/Bullet.png" exists.
-            bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
-            // Add the BulletComponent: speed is set to 5.0, and maxDistance is 7 tiles (7*32=224 pixels)
-            bullet.addComponent<BulletComponent>(direction, 5.0f, 224.0f);
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    int newWidth = event.window.data1;
+                    int newHeight = event.window.data2;
+                    SDL_RenderSetLogicalSize(renderer, newWidth, newHeight);
+                    camera.w = newWidth;
+                    camera.h = newHeight;
+                }
+                break;
 
-            break;
+            default:
+                break;
         }
-        case SDL_WINDOWEVENT:
-            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                int newWidth = event.window.data1;
-                int newHeight = event.window.data2;
-                SDL_RenderSetLogicalSize(renderer, newWidth, newHeight);
-                // Update camera size to match new logical size
-                Game::camera.w = newWidth;
-                Game::camera.h = newHeight;
-            }
-            break;
-        default:
-            break;
     }
 }
 
@@ -119,6 +128,7 @@ void Game::update() {
     auto& playerTransform = player.getComponent<TransformComponent>();
     Vector2D oldPlayerPos = playerTransform.position;
 
+    // Update all entities
     manager.refresh();
     manager.update();
 
@@ -126,10 +136,15 @@ void Game::update() {
     Game::camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - Game::camera.w / 2);
     Game::camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - Game::camera.h / 2);
 
-    // Optional: Clamp camera values so it doesn’t go out of your map boundaries
+    // Debug: Print the player's position every update (i.e. every move)
+    std::cout << "Player position: ("
+              << playerTransform.position.x << ", "
+              << playerTransform.position.y << ")" << std::endl;
 
+    // Handle collisions if needed
     handleCollisions(oldPlayerPos);
 }
+
 
 void Game::handleCollisions(Vector2D oldPlayerPos) {
     auto& playerTransform = player.getComponent<TransformComponent>();
