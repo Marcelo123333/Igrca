@@ -6,6 +6,7 @@
 #include "Vector2D.h"
 #include "Collision.h"
 #include "ESC/ColliderComponent.h"
+#include "BulletComponent.h"
 using namespace std;
 
 Map* map;
@@ -64,18 +65,51 @@ void Game::handleEvents() {
     switch (event.type) {
         case SDL_QUIT:
             isRunning = false;
-        break;
+            break;
+        case SDL_MOUSEBUTTONDOWN: {
+            // Get the click position (mouse coordinates)
+            int mouseX = event.button.x;
+            int mouseY = event.button.y;
+            // Adjust for camera offset so that we work in world coordinates
+            mouseX += camera.x;
+            mouseY += camera.y;
+
+            // Get player's center position
+            auto& playerTransform = player.getComponent<TransformComponent>();
+            float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
+            float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
+
+            // Compute the direction vector from player to mouse click
+            float dx = mouseX - playerCenterX;
+            float dy = mouseY - playerCenterY;
+            float length = std::sqrt(dx * dx + dy * dy);
+            Vector2D direction = {0,0};
+            if (length != 0) {
+                direction.x = dx / length;
+                direction.y = dy / length;
+            }
+
+            // Create a new bullet entity
+            auto& bullet = manager.addEntity();
+            // Set bullet's starting position at player's center. Here, bullet size is 16x16.
+            bullet.addComponent<TransformComponent>(playerCenterX, playerCenterY, 16, 16, 1);
+            // Optionally add a sprite. Make sure "Assets/Bullet.png" exists.
+            bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
+            // Add the BulletComponent: speed is set to 5.0, and maxDistance is 7 tiles (7*32=224 pixels)
+            bullet.addComponent<BulletComponent>(direction, 5.0f, 224.0f);
+
+            break;
+        }
         case SDL_WINDOWEVENT:
-            if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                 int newWidth = event.window.data1;
                 int newHeight = event.window.data2;
                 SDL_RenderSetLogicalSize(renderer, newWidth, newHeight);
-
-                // Update the camera dimensions to match the new logical size
+                // Update camera size to match new logical size
                 Game::camera.w = newWidth;
                 Game::camera.h = newHeight;
             }
-        break;
+            break;
         default:
             break;
     }

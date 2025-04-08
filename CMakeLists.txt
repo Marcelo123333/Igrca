@@ -31,6 +31,7 @@ add_executable(Igrica main.cpp Game.cpp Game.h
         Collision.cpp
         ESC/TileComponent.h
         ESC/ColliderComponent.cpp
-        ESC/SpriteComponent.cpp)
+        ESC/SpriteComponent.cpp
+        BulletComponent.h)
 
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARY} ${SDL2_IMAGE_LIBRARIES})
