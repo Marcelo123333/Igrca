@@ -28,7 +28,7 @@ Game::~Game()
 void spawnEnemy(Manager& manager, float x, float y) {
     auto& enemy = manager.addEntity();
     // Add a transform; adjust size and scale as needed (here 36x42 pixels)
-    enemy.addComponent<TransformComponent>(x, y, 72, 84, 1);
+    enemy.addComponent<TransformComponent>(x, y, 72, 72, 1);
     // Add a sprite component that uses an enemy image (ensure the file exists)
     enemy.addComponent<SpriteComponent>("Assets/Nasprotnik.png");
     // Add a collider component so collisions can be detected (tag it as "enemy")
@@ -149,6 +149,7 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
+    // Retrieve the player's transform component and store its position
     auto& playerTransform = player.getComponent<TransformComponent>();
     Vector2D oldPlayerPos = playerTransform.position;
 
@@ -156,17 +157,39 @@ void Game::update() {
     manager.refresh();
     manager.update();
 
-    // Update camera to center on the player
+    // Center the camera on the player after updating entities
     Game::camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - Game::camera.w / 2);
     Game::camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - Game::camera.h / 2);
 
-    // Debug: Print the player's position every update (i.e. every move)
+    // Handle collisions with walls (or other world objects)
+    handleCollisions(oldPlayerPos);
+
+    // --- Check for collisions between the player and enemy colliders ---
+    auto& playerCollider = player.getComponent<ColliderComponent>();
+    bool collidedWithEnemy = false;
+    for (auto& col : Game::colliders) {
+        // Only check colliders tagged as "enemy"
+        if (col->tag == "enemy") {
+            if (Collision::AABB(playerCollider, *col)) {
+                collidedWithEnemy = true;
+                break;
+            }
+        }
+    }
+
+    // If there is a collision with an enemy, revert player's position and stop movement
+    if (collidedWithEnemy) {
+        playerTransform.position = oldPlayerPos;
+        // Optionally zero out player's velocity to prevent further movement in that frame.
+        playerTransform.velocity.x = 0;
+        playerTransform.velocity.y = 0;
+        std::cout << "Player collided with an enemy! Movement stopped." << std::endl;
+    }
+
+    // Debug: Print player's position
     std::cout << "Player position: ("
               << playerTransform.position.x << ", "
               << playerTransform.position.y << ")" << std::endl;
-
-    // Handle collisions if needed
-    handleCollisions(oldPlayerPos);
 }
 
 
