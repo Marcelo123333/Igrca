@@ -22,8 +22,10 @@ public:
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
 
-    // Pet counter: how many pets the player has picked up.
-    int petCount;
+    int petCount;      // Already used elsewhere.
+    int heartCount;    // Number of lives (hearts) for the player.
+    Uint32 lastHitTime; // Timestamp (in ms) of the last enemy collision.
+
 
 private:
     int cnt = 0;

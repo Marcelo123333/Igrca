@@ -99,7 +99,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     spawnEnemy(manager, 205.0f, 1960.0f);
 
 
-    petCount = 0;
+    petCount = 0;         // Already in use elsewhere.
+    heartCount = 3;       // The player starts with 3 hearts.
+    lastHitTime = 0;      // Initialize to 0 (or use SDL_GetTicks() to start now).
+
     // Spawn a pet at fixed coordinates (adjust coordinates as needed).
     spawnPet(manager, 80.0f, 3045.0f);
     spawnPet(manager, 2805.0f, 2670.0f);
@@ -159,38 +162,46 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    // Retrieve the player's TransformComponent using the global player pointer.
+    // Retrieve the player's transform component using the global player pointer.
     auto& playerTransform = player->getComponent<TransformComponent>();
+    // Save the current position (for wall collisions).
     Vector2D oldPlayerPos = playerTransform.position;
+    // Get the current time in milliseconds.
+    Uint32 currentTime = SDL_GetTicks();
 
     // Update all entities.
     manager.refresh();
     manager.update();
 
-    // Re-center the camera on the player.
+    // Center the camera on the player's current position.
     camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
     camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
 
-    // Handle collisions with walls (your custom function that reverts position).
+    // Handle collisions with walls.
     handleCollisions(oldPlayerPos);
 
-    // --- Check for collision between the player and pets ---
+    // --- Check for collisions between the player and enemy colliders ---
     auto& playerCollider = player->getComponent<ColliderComponent>();
-    for (auto& col : Game::colliders) {
-        if (col->tag == "pet") {
-            // Only process if the pet entity is active.
-            if (!col->entity->isActive())
-                continue;  // Skip if pet is already deleted.
-
-            if (Collision::AABB(playerCollider, *col)) {
-                petCount++;  // Increment pet counter.
-                std::cout << "Picked up a pet! Total: " << petCount << std::endl;
-                col->entity->destroy();  // Destroy the pet.
-            }
+    bool collidedWithEnemy = false;
+    for (auto& col : colliders) {
+        if (col->tag == "enemy" && Collision::AABB(playerCollider, *col)) {
+            collidedWithEnemy = true;
+            break;
         }
     }
 
-    // Debug: Print player's current position.
+    // If a collision occurred and at least 1.5 seconds have passed since the last hit:
+    if (collidedWithEnemy && (currentTime - lastHitTime >= 1000)) {
+        heartCount--;  // Player loses one heart.
+        lastHitTime = currentTime;  // Update last hit time.
+        std::cout << "Player hit by enemy! Lives left: " << heartCount << std::endl;
+        if (heartCount <= 0) {
+            std::cout << "Game Over!" << std::endl;
+            isRunning = false;  // End the game.
+        }
+    }
+
+    // Optionally, print the player's position for debugging.
     std::cout << "Player position: ("
               << playerTransform.position.x << ", "
               << playerTransform.position.y << ")" << std::endl;
