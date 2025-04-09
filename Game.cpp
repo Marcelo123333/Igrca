@@ -25,30 +25,42 @@ Game::Game()
 Game::~Game()
 {}
 
+void spawnEnemy(Manager& manager, float x, float y) {
+    auto& enemy = manager.addEntity();
+    // Add a transform; adjust size and scale as needed (here 36x42 pixels)
+    enemy.addComponent<TransformComponent>(x, y, 72, 84, 1);
+    // Add a sprite component that uses an enemy image (ensure the file exists)
+    enemy.addComponent<SpriteComponent>("Assets/Nasprotnik.png");
+    // Add a collider component so collisions can be detected (tag it as "enemy")
+    enemy.addComponent<ColliderComponent>("enemy");
+
+    // Optionally, you could add an EnemyAI or EnemyComponent here to drive behavior
+}
 
 void Game::init(const char* title, int width, int height, bool fullscreen) {
     int flags = 0;
-    if(fullscreen) {
+    if (fullscreen) {
         flags = SDL_WINDOW_FULLSCREEN;
     } else {
-        flags = SDL_WINDOW_RESIZABLE;  // Make the window resizable
+        flags = SDL_WINDOW_RESIZABLE;
     }
 
-    if(SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-        cout << "Subsystems Initialized!!" << endl;
+    if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
+        std::cout << "Subsystems Initialized!!" << std::endl;
         window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
         renderer = SDL_CreateRenderer(window, -1, 0);
-        if(window) {
-            cout << "Window Created!" << endl;
+        if (window) {
+            std::cout << "Window Created!" << std::endl;
         }
-        if(renderer) {
+        if (renderer) {
             SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-            SDL_RenderSetLogicalSize(renderer, 800, 640);  // Set your desired logical size here
-            cout << "Renderer Created!" << endl;
+            SDL_RenderSetLogicalSize(renderer, 800, 640);
+            std::cout << "Renderer Created!" << std::endl;
         }
         isRunning = true;
     }
 
+    // Create your map and wall colliders, etc.
     map = new Map();
     map->LoadMap();
     map->CreateWallColliders(manager);
@@ -58,7 +70,19 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player.addComponent<SpriteComponent>("Assets/Clovek.png");
     player.addComponent<KeyboardController>();
     player.addComponent<ColliderComponent>("player");
+
+    // Now, spawn enemies at fixed locations
+    // You can call spawnEnemy() with your chosen X and Y positions.
+    spawnEnemy(manager, 1330.0f, 395.0f);
+    spawnEnemy(manager, 1925.0f, 1005.0f);
+    spawnEnemy(manager, 1386.0f, 1035.0f);
+    spawnEnemy(manager, 1025.0f, 1740.0f);
+    spawnEnemy(manager, 1510.0f, 2635.0f);
+    spawnEnemy(manager, 1960.0f, 2305.0f);
+    spawnEnemy(manager, 95.0f, 2860.0f);
+    spawnEnemy(manager, 390.0f, 3035.0f);
 }
+
 
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
@@ -98,7 +122,7 @@ void Game::handleEvents() {
 
                 // Set the bullet's starting position to the offset coordinates;
                 // assume bullet size is 16x16 pixels
-                bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 16, 16, 1);
+                bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
                 // Add the sprite (make sure "Assets/Bullet.png" exists)
                 bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
                 // Add the BulletComponent:
@@ -214,3 +238,5 @@ void Game::clean() {
     SDL_Quit();
     cout<<"Game Cleaned!"<<endl;
 }
+
+
