@@ -33,34 +33,47 @@ public:
     void update() override {
         auto& transform = entity->getComponent<TransformComponent>();
 
-        // Save old position
+        // Save old position for distance calculation.
         float oldX = transform.position.x;
         float oldY = transform.position.y;
 
-        // Move the bullet using its normalized direction and speed
+        // Move the bullet along its normalized direction at the defined speed.
         transform.position.x += direction.x * speed;
         transform.position.y += direction.y * speed;
 
-        // Explicitly update the bullet's collider so it matches the new transform.
-        auto& bulletCollider = entity->getComponent<ColliderComponent>();
-        bulletCollider.update();
-
-        // Calculate the distance traveled this frame and accumulate it
+        // Update distance traveled.
         float dx = transform.position.x - oldX;
         float dy = transform.position.y - oldY;
         distanceTraveled += std::sqrt(dx * dx + dy * dy);
 
-        // Check collision with wall colliders (those with tag "wall")
+        // Update the bullet's collider after moving.
+        auto& bulletCollider = entity->getComponent<ColliderComponent>();
+        bulletCollider.update();
+
+        // First, check collision against wall colliders.
         for (auto& col : Game::colliders) {
             if (col->tag == "wall") {
                 if (Collision::AABB(bulletCollider, *col)) {
-                    entity->destroy();  // Destroy the bullet upon collision
-                    return;             // Exit update early
+                    // Destroy the bullet if it hits a wall.
+                    entity->destroy();
+                    return;
                 }
             }
         }
 
-        // If the bullet has traveled beyond its maximum allowed distance, destroy it
+        // Next, check collision against enemy colliders.
+        for (auto& col : Game::colliders) {
+            if (col->tag == "enemy") {
+                if (Collision::AABB(bulletCollider, *col)) {
+                    // If the bullet collides with an enemy, destroy both enemy and bullet.
+                    col->entity->destroy();  // Destroy enemy.
+                    entity->destroy();         // Destroy bullet.
+                    return;
+                }
+            }
+        }
+
+        // If the bullet has traveled beyond its maximum allowed distance, destroy it.
         if (distanceTraveled >= maxDistance) {
             entity->destroy();
         }

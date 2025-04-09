@@ -47,6 +47,17 @@ void spawnEnemy(Manager& manager, float x, float y) {
     enemy.addComponent<EnemyAIComponent>(320.0f, 0.5f);
 }
 
+// Helper function to spawn a pet at static coordinates.
+void spawnPet(Manager& manager, float x, float y) {
+    auto& pet = manager.addEntity();
+    // Set the pet's transform: adjust size as needed (here 32x32 pixels)
+    pet.addComponent<TransformComponent>(x, y, 48, 48, 1);
+    // Add a sprite for the pet (ensure "Assets/Pet.png" exists)
+    pet.addComponent<SpriteComponent>("Assets/Zival.png");
+    // Add a collider with the tag "pet" so that collisions can be detected
+    pet.addComponent<ColliderComponent>("pet");
+}
+
 void Game::init(const char* title, int width, int height, bool fullscreen) {
     int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE;
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
@@ -84,6 +95,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     spawnEnemy(manager, 1960.0f, 2305.0f);
     spawnEnemy(manager, 95.0f, 2860.0f);
     spawnEnemy(manager, 390.0f, 3035.0f);
+    spawnEnemy(manager, 325.0f, 1245.0f);
+    spawnEnemy(manager, 205.0f, 1960.0f);
+
+
+    petCount = 0;
+    // Spawn a pet at fixed coordinates (adjust coordinates as needed).
+    spawnPet(manager, 80.0f, 3045.0f);
+    spawnPet(manager, 2805.0f, 2670.0f);
 }
 
 void Game::handleEvents() {
@@ -142,36 +161,42 @@ void Game::handleEvents() {
 void Game::update() {
     // Retrieve the player's TransformComponent using the global player pointer.
     auto& playerTransform = player->getComponent<TransformComponent>();
-    // Save the current position (used for wall collision handling).
     Vector2D oldPlayerPos = playerTransform.position;
 
-    // Refresh and update all entities.
+    // Update all entities.
     manager.refresh();
     manager.update();
 
-    // Center the camera on the player's current position.
+    // Re-center the camera on the player.
     camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
     camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
 
-    // Handle collisions with the world (e.g., walls).
-    // This call should adjust the player's position if a wall collision is detected.
+    // Handle collisions with walls (your custom function that reverts position).
     handleCollisions(oldPlayerPos);
 
+    // --- Check for collision between the player and pets ---
+    auto& playerCollider = player->getComponent<ColliderComponent>();
+    for (auto& col : Game::colliders) {
+        if (col->tag == "pet") {
+            // Only process if the pet entity is active.
+            if (!col->entity->isActive())
+                continue;  // Skip if pet is already deleted.
 
-     auto& playerCollider = player->getComponent<ColliderComponent>();
-     for (auto& col : colliders) {
-         if (col->tag == "enemy" && Collision::AABB(playerCollider, *col)) {
-             // Process enemy collision, e.g., reduce player health.
-             std::cout << "Player hit by enemy!" << std::endl;
-             break;
-         }
-     }
+            if (Collision::AABB(playerCollider, *col)) {
+                petCount++;  // Increment pet counter.
+                std::cout << "Picked up a pet! Total: " << petCount << std::endl;
+                col->entity->destroy();  // Destroy the pet.
+            }
+        }
+    }
 
-    // Print player's current position for debugging.
+    // Debug: Print player's current position.
     std::cout << "Player position: ("
               << playerTransform.position.x << ", "
               << playerTransform.position.y << ")" << std::endl;
 }
+
+
 
 void Game::handleCollisions(Vector2D oldPlayerPos) {
     auto& playerTransform = player->getComponent<TransformComponent>();

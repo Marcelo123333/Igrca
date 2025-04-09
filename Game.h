@@ -1,8 +1,9 @@
 #pragma once
 #include <SDL.h>
 #include <vector>
-class ColliderComponent; // forward declaration
-class Map;             // forward declaration
+// forward declarations:
+class ColliderComponent;
+class Map;
 
 class Game {
 public:
@@ -20,10 +21,13 @@ public:
     static SDL_Renderer* renderer;
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
-    
+
+    // Pet counter: how many pets the player has picked up.
+    int petCount;
+
 private:
     int cnt = 0;
     bool isRunning;
     SDL_Window* window;
-    Map* map; // Added member to hold our Map pointer.
+    Map* map;
 };
