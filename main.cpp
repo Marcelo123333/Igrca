@@ -1,19 +1,15 @@
-// Define Windows lean headers and prevent conflicts with NOMINMAX, etc.
-
 #include <windows.h>
-#include <cstddef>  // For std::byte
+#include <cstddef>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <iostream>
-#include "Game.h"   // Your game class header
-
-
+#include "Game.h"
 
 int main(int argc, char* argv[]) {
-    // Optionally, if you want to allocate a console in a Windows application:
-     AllocConsole();
-     freopen("CONOUT$", "w", stdout);
-     freopen("CONIN$", "r", stdin);
+    // Optionally allocate a console (if you need one)
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONIN$", "r", stdin);
 
     Game* game = new Game();
     game->init("Igrica", 800, 640, false);
@@ -27,19 +23,15 @@ int main(int argc, char* argv[]) {
     // Main game loop
     while (game->running()) {
         frameStart = SDL_GetTicks();
-
         game->handleEvents();
         game->update();
         game->render();
-
         frameTime = SDL_GetTicks() - frameStart;
-        if (frameDelay > frameTime) {
+        if (frameDelay > frameTime)
             SDL_Delay(frameDelay - frameTime);
-        }
     }
 
     game->clean();
     delete game;
-
     return 0;
 }

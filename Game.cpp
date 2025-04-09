@@ -1,50 +1,54 @@
+// Game.cpp
+
+// Define Windows macros if needed.
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+
+#include <windows.h>
+#include <cstddef>      // For std::byte
+#include <SDL.h>
+#include <SDL_image.h>
+#include <iostream>
+#include <cmath>
 #include "Game.h"
-#include "TextureManager.h"
-#include "ESC/ECS.h"
 #include "ESC/Components.h"
-#include "Map.h"
-#include "Vector2D.h"
-#include "Collision.h"
 #include "ESC/ColliderComponent.h"
-#include "BulletComponent.h"
-using namespace std;
+#include "Map.h"
+#include "ESC/EnemyAIComponent.h"
+#include "TextureManager.h"
+#include "BulletComponent.h"   // Include bullet component header
+#include "Collision.h"         // Include collision header
 
-Map* map;
+// Undefine any conflicting macros.
+#ifdef byte
+#undef byte
+#endif
+
+// Global instances used by Game.cpp:
 Manager manager;
-
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
-vector<ColliderComponent*> Game::colliders;
-auto& player(manager.addEntity());
-auto& tile0(manager.addEntity());
-auto& tile1(manager.addEntity());
-
+std::vector<ColliderComponent*> Game::colliders;
 SDL_Rect Game::camera = { 0, 0, 800, 640 };
-Game::Game()
-{}
-Game::~Game()
-{}
+
+// Global player pointer (declared as extern in your EnemyAIComponent.h or Globals.h)
+Entity* player = nullptr;
+
+Game::Game() : isRunning(false), window(nullptr), map(nullptr) { }
+Game::~Game() { }
 
 void spawnEnemy(Manager& manager, float x, float y) {
     auto& enemy = manager.addEntity();
-    // Add a transform; adjust size and scale as needed (here 36x42 pixels)
-    enemy.addComponent<TransformComponent>(x, y, 72, 72, 1);
-    // Add a sprite component that uses an enemy image (ensure the file exists)
+    // Set enemy transform size (visual/collision dimensions) and assign a slower speed.
+    enemy.addComponent<TransformComponent>(x, y, 72, 72, 1); // speed is 1 (instead of 5)
     enemy.addComponent<SpriteComponent>("Assets/Nasprotnik.png");
-    // Add a collider component so collisions can be detected (tag it as "enemy")
     enemy.addComponent<ColliderComponent>("enemy");
-
-    // Optionally, you could add an EnemyAI or EnemyComponent here to drive behavior
+    // Use a follow speed such as 0.05f or 0.1f; adjust until it feels right.
+    enemy.addComponent<EnemyAIComponent>(320.0f, 0.5f);
 }
 
 void Game::init(const char* title, int width, int height, bool fullscreen) {
-    int flags = 0;
-    if (fullscreen) {
-        flags = SDL_WINDOW_FULLSCREEN;
-    } else {
-        flags = SDL_WINDOW_RESIZABLE;
-    }
-
+    int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE;
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
         std::cout << "Subsystems Initialized!!" << std::endl;
         window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
@@ -60,19 +64,18 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         isRunning = true;
     }
 
-    // Create your map and wall colliders, etc.
+    // Create our map and wall colliders.
     map = new Map();
     map->LoadMap();
     map->CreateWallColliders(manager);
 
-    // Setup player entity with components
-    player.addComponent<TransformComponent>(200.0f, 200.0f, 40, 43, 1);
-    player.addComponent<SpriteComponent>("Assets/Clovek.png");
-    player.addComponent<KeyboardController>();
-    player.addComponent<ColliderComponent>("player");
+    // Spawn the player and assign it to the global player pointer.
+    player = &manager.addEntity();
+    player->addComponent<TransformComponent>(200.0f, 200.0f, 40, 43, 1);
+    player->addComponent<SpriteComponent>("Assets/Clovek.png");
+    player->addComponent<KeyboardController>();
+    player->addComponent<ColliderComponent>("player");
 
-    // Now, spawn enemies at fixed locations
-    // You can call spawnEnemy() with your chosen X and Y positions.
     spawnEnemy(manager, 1330.0f, 395.0f);
     spawnEnemy(manager, 1925.0f, 1005.0f);
     spawnEnemy(manager, 1386.0f, 1035.0f);
@@ -83,55 +86,44 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     spawnEnemy(manager, 390.0f, 3035.0f);
 }
 
-
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
                 isRunning = false;
                 break;
-
             case SDL_MOUSEBUTTONDOWN: {
-                // Convert mouse coordinates to world coordinates by applying camera offset
+                // Convert mouse coordinates (screen) to world coordinates by adding camera offset.
                 int mouseX = event.button.x + camera.x;
                 int mouseY = event.button.y + camera.y;
 
-                // Get the player's center from its TransformComponent
-                auto& playerTransform = player.getComponent<TransformComponent>();
+                // Get player's center from its TransformComponent.
+                auto& playerTransform = player->getComponent<TransformComponent>();
                 float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
                 float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
 
-                // Calculate the direction vector from the player to the mouse click
+                // Compute direction vector from player center to mouse click.
                 float dx = mouseX - playerCenterX;
                 float dy = mouseY - playerCenterY;
                 float length = std::sqrt(dx * dx + dy * dy);
-                Vector2D direction = {0, 0};
+                Vector2D direction = { 0, 0 };
                 if (length != 0) {
                     direction.x = dx / length;
                     direction.y = dy / length;
                 }
 
-                // Offset the bullet's starting position away from the player.
-                // For example, use half the player's width plus an extra margin.
-                float spawnOffset = playerTransform.width / 2 + 10; // 10 pixels extra
+                // Calculate spawn offset so bullet appears away from the player.
+                float spawnOffset = playerTransform.width / 2 + 10;
                 float bulletStartX = playerCenterX + direction.x * spawnOffset;
                 float bulletStartY = playerCenterY + direction.y * spawnOffset;
 
-                // Create a new bullet entity
+                // Create a bullet entity.
                 auto& bullet = manager.addEntity();
-
-                // Set the bullet's starting position to the offset coordinates;
-                // assume bullet size is 16x16 pixels
                 bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
-                // Add the sprite (make sure "Assets/Bullet.png" exists)
                 bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
-                // Add the BulletComponent:
-                // Speed is 5.0f, maxDistance is 7 tiles (7*32 = 224 pixels).
                 bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
-
                 break;
             }
-
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                     int newWidth = event.window.data1;
@@ -141,7 +133,6 @@ void Game::handleEvents() {
                     camera.h = newHeight;
                 }
                 break;
-
             default:
                 break;
         }
@@ -149,98 +140,72 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    // Retrieve the player's transform component and store its position
-    auto& playerTransform = player.getComponent<TransformComponent>();
+    // Retrieve the player's TransformComponent using the global player pointer.
+    auto& playerTransform = player->getComponent<TransformComponent>();
+    // Save the current position (used for wall collision handling).
     Vector2D oldPlayerPos = playerTransform.position;
 
-    // Update all entities
+    // Refresh and update all entities.
     manager.refresh();
     manager.update();
 
-    // Center the camera on the player after updating entities
-    Game::camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - Game::camera.w / 2);
-    Game::camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - Game::camera.h / 2);
+    // Center the camera on the player's current position.
+    camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
+    camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
 
-    // Handle collisions with walls (or other world objects)
+    // Handle collisions with the world (e.g., walls).
+    // This call should adjust the player's position if a wall collision is detected.
     handleCollisions(oldPlayerPos);
 
-    // --- Check for collisions between the player and enemy colliders ---
-    auto& playerCollider = player.getComponent<ColliderComponent>();
-    bool collidedWithEnemy = false;
-    for (auto& col : Game::colliders) {
-        // Only check colliders tagged as "enemy"
-        if (col->tag == "enemy") {
-            if (Collision::AABB(playerCollider, *col)) {
-                collidedWithEnemy = true;
-                break;
-            }
-        }
-    }
 
-    // If there is a collision with an enemy, revert player's position and stop movement
-    if (collidedWithEnemy) {
-        playerTransform.position = oldPlayerPos;
-        // Optionally zero out player's velocity to prevent further movement in that frame.
-        playerTransform.velocity.x = 0;
-        playerTransform.velocity.y = 0;
-        std::cout << "Player collided with an enemy! Movement stopped." << std::endl;
-    }
+     auto& playerCollider = player->getComponent<ColliderComponent>();
+     for (auto& col : colliders) {
+         if (col->tag == "enemy" && Collision::AABB(playerCollider, *col)) {
+             // Process enemy collision, e.g., reduce player health.
+             std::cout << "Player hit by enemy!" << std::endl;
+             break;
+         }
+     }
 
-    // Debug: Print player's position
+    // Print player's current position for debugging.
     std::cout << "Player position: ("
               << playerTransform.position.x << ", "
               << playerTransform.position.y << ")" << std::endl;
 }
 
-
 void Game::handleCollisions(Vector2D oldPlayerPos) {
-    auto& playerTransform = player.getComponent<TransformComponent>();
-    auto& playerCol = player.getComponent<ColliderComponent>();
+    auto& playerTransform = player->getComponent<TransformComponent>();
+    auto& playerCol = player->getComponent<ColliderComponent>();
 
     bool collisionX = false;
     bool collisionY = false;
 
-
-    for(auto& cc : colliders) {
-        if(cc->tag == "wall" && cc != &playerCol) {
-
-            if(Collision::AABB(playerCol, *cc)) {
-
-
-                // Test X-axis collision
+    for (auto& cc : colliders) {
+        if (cc->tag == "wall" && cc != &playerCol) {
+            if (Collision::AABB(playerCol, *cc)) {
+                // Test X-axis collision.
                 Vector2D testPos = playerTransform.position;
                 testPos.x = oldPlayerPos.x;
 
-
                 SDL_Rect tempRect = playerCol.collider;
                 playerCol.collider.x = static_cast<int>(testPos.x);
-
-
-                if(Collision::AABB(playerCol.collider, cc->collider)) {
+                if (Collision::AABB(playerCol.collider, cc->collider))
                     collisionY = true;
-                }
-
 
                 playerCol.collider = tempRect;
                 testPos = playerTransform.position;
                 testPos.y = oldPlayerPos.y;
-
                 playerCol.collider.y = static_cast<int>(testPos.y);
-
-
-                if(Collision::AABB(playerCol.collider, cc->collider)) {
+                if (Collision::AABB(playerCol.collider, cc->collider))
                     collisionX = true;
-                }
-
                 playerCol.collider = tempRect;
 
-                if(collisionX && collisionY) {
+                if (collisionX && collisionY)
                     playerTransform.position = oldPlayerPos;
-                } else if(collisionX) {
+                else if (collisionX)
                     playerTransform.position.x = oldPlayerPos.x;
-                } else if(collisionY) {
+                else if (collisionY)
                     playerTransform.position.y = oldPlayerPos.y;
-                }
 
                 playerCol.update();
             }
@@ -259,7 +224,5 @@ void Game::clean() {
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
-    cout<<"Game Cleaned!"<<endl;
+    std::cout << "Game Cleaned!" << std::endl;
 }
-
-
