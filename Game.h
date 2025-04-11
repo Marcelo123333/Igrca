@@ -16,6 +16,9 @@ public:
     void clean();
     void handleCollisions(class Vector2D oldPlayerPos);
     bool running() { return isRunning; }
+    static bool inMenu;
+    static SDL_Texture* menuTexture;
+    bool isInMenu() const { return inMenu; }
 
     static SDL_Event event;
     static SDL_Renderer* renderer;
@@ -28,8 +31,15 @@ public:
 
 
 private:
+
+    Uint32 lastMousePositionLogTime = 0;
+    const Uint32 mouseLogInterval = 1000;
+    int mouseX = 0;
+    int mouseY = 0;
+    bool showMousePosition = true;
     int cnt = 0;
     bool isRunning;
     SDL_Window* window;
     Map* map;
+    void initializeGame();
 };

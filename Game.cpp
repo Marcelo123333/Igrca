@@ -30,10 +30,10 @@ SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 std::vector<ColliderComponent*> Game::colliders;
 SDL_Rect Game::camera = { 0, 0, 800, 640 };
-
 // Global player pointer (declared as extern in your EnemyAIComponent.h or Globals.h)
 Entity* player = nullptr;
-
+bool Game::inMenu = true;
+SDL_Texture* Game::menuTexture = nullptr;
 Game::Game() : isRunning(false), window(nullptr), map(nullptr) { }
 Game::~Game() { }
 
@@ -57,7 +57,6 @@ void spawnPet(Manager& manager, float x, float y) {
     // Add a collider with the tag "pet" so that collisions can be detected
     pet.addComponent<ColliderComponent>("pet");
 }
-
 void Game::init(const char* title, int width, int height, bool fullscreen) {
     int flags = fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE;
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
@@ -74,7 +73,17 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         }
         isRunning = true;
     }
+    lastMousePositionLogTime = SDL_GetTicks();
+    // Load menu texture
+    menuTexture = TextureManager::LoadTexture("Assets/Menu.png");
+    if (!menuTexture) {
+        std::cout << "Failed to load menu texture!" << std::endl;
+    }
 
+    // Initialize game state
+    inMenu = true;
+}
+void Game::initializeGame() {
     // Create our map and wall colliders.
     map = new Map();
     map->LoadMap();
@@ -87,6 +96,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player->addComponent<KeyboardController>();
     player->addComponent<ColliderComponent>("player");
 
+    // Spawn enemies
     spawnEnemy(manager, 1330.0f, 395.0f);
     spawnEnemy(manager, 1925.0f, 1005.0f);
     spawnEnemy(manager, 1386.0f, 1035.0f);
@@ -98,22 +108,39 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     spawnEnemy(manager, 325.0f, 1245.0f);
     spawnEnemy(manager, 205.0f, 1960.0f);
 
+    // Initialize game stats
+    petCount = 0;
+    heartCount = 3;
+    lastHitTime = 0;
 
-    petCount = 0;         // Already in use elsewhere.
-    heartCount = 3;       // The player starts with 3 hearts.
-    lastHitTime = 0;      // Initialize to 0 (or use SDL_GetTicks() to start now).
-
-    // Spawn a pet at fixed coordinates (adjust coordinates as needed).
+    // Spawn pets
     spawnPet(manager, 80.0f, 3045.0f);
     spawnPet(manager, 2805.0f, 2670.0f);
 }
-
-void Game::handleEvents() {
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
-                isRunning = false;
+    void Game::handleEvents() {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    isRunning = false;
                 break;
+
+                case SDL_MOUSEMOTION:
+                    // Update mouse position
+                        mouseX = event.motion.x;
+                mouseY = event.motion.y;
+
+                if (inMenu) {
+                    // Continuous mouse position output in menu
+                    std::cout << "Menu Mouse: (" << mouseX << ", " << mouseY << ")\n";
+                }
+                break;
+            case SDL_KEYDOWN:
+                if (inMenu && event.key.keysym.sym == SDLK_SPACE) {
+                    inMenu = false;
+                    // Initialize the actual game when leaving menu
+                    initializeGame();
+                }
+            break;
             case SDL_MOUSEBUTTONDOWN: {
                 // Convert mouse coordinates (screen) to world coordinates by adding camera offset.
                 int mouseX = event.button.x + camera.x;
@@ -154,7 +181,7 @@ void Game::handleEvents() {
                     camera.w = newWidth;
                     camera.h = newHeight;
                 }
-                break;
+            break;
             default:
                 break;
         }
@@ -162,39 +189,51 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    auto& playerTransform = player->getComponent<TransformComponent>();
-    Vector2D oldPlayerPos = playerTransform.position;
+    if (inMenu) {
+        return; // Don't update game logic while in menu
+    }
     Uint32 currentTime = SDL_GetTicks();
 
-    // Refresh and update entities.
+    // Log mouse position every second
+    if (currentTime - lastMousePositionLogTime > mouseLogInterval) {
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+
+        // Convert screen coordinates to world coordinates
+        int worldX = mouseX + camera.x;
+        int worldY = mouseY + camera.y;
+
+        std::cout << "Mouse position - Screen: (" << mouseX << ", " << mouseY
+                  << ") World: (" << worldX << ", " << worldY << ")" << std::endl;
+        lastMousePositionLogTime = currentTime;
+    }
+
+    auto& playerTransform = player->getComponent<TransformComponent>();
+    Vector2D oldPlayerPos = playerTransform.position;
+
     manager.refresh();
     manager.update();
 
-    // Update camera
     camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
     camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
 
     handleCollisions(oldPlayerPos);
 
-    // Get the player's collider (declare only once).
     auto& playerCollider = player->getComponent<ColliderComponent>();
 
-    // PET COLLISIONS
+    // Pet collisions
     for (auto& col : colliders) {
-        // Process only pet colliders whose entity is active.
         if (col->tag == "pet" && col->entity->isActive()) {
             if (Collision::AABB(playerCollider, *col)) {
-                petCount++;  // Increase pet counter.
-                std::cout << "Pet collected! Total pets: " << petCount << std::endl;
-                col->entity->destroy(); // Remove this pet from the game.
+                petCount++;
+                col->entity->destroy();
             }
         }
     }
 
-    // ENEMY COLLISIONS (for damaging the player)
+    // Enemy collisions
     bool collidedWithEnemy = false;
     for (auto& col : colliders) {
-        // Only consider enemy colliders that are still active.
         if (col->tag == "enemy" && col->entity->isActive()) {
             if (Collision::AABB(playerCollider, *col)) {
                 collidedWithEnemy = true;
@@ -205,17 +244,10 @@ void Game::update() {
     if (collidedWithEnemy && (currentTime - lastHitTime >= 1000)) {
         heartCount--;
         lastHitTime = currentTime;
-        std::cout << "Player hit by enemy! Lives left: " << heartCount << std::endl;
         if (heartCount <= 0) {
-            std::cout << "Game Over!" << std::endl;
             isRunning = false;
         }
     }
-
-    // Debug print player's position.
-    std::cout << "Player position: ("
-              << playerTransform.position.x << ", "
-              << playerTransform.position.y << ")" << std::endl;
 }
 
 
@@ -264,14 +296,34 @@ void Game::handleCollisions(Vector2D oldPlayerPos) {
 
 void Game::render() {
     SDL_RenderClear(renderer);
-    map->DrawMap();
-    manager.draw();
+
+    if (inMenu) {
+        // Render menu background
+        SDL_RenderCopy(renderer, menuTexture, NULL, NULL);
+
+        // Render mouse position on screen (optional)
+        if (showMousePosition) {
+            std::string mousePosText = "Mouse: " + std::to_string(mouseX) + ", " + std::to_string(mouseY);
+            // You'll need SDL_ttf for text rendering or use a simpler method
+        }
+    } else {
+        // Render game
+        map->DrawMap();
+        manager.draw();
+    }
+
     SDL_RenderPresent(renderer);
 }
 
+// Modify the clean function to clean up menu resources
 void Game::clean() {
+    if (menuTexture) {
+        SDL_DestroyTexture(menuTexture);
+    }
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
     std::cout << "Game Cleaned!" << std::endl;
 }
+
+
