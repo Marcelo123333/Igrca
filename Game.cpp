@@ -162,29 +162,39 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    // Retrieve the player's transform component using the global player pointer.
     auto& playerTransform = player->getComponent<TransformComponent>();
-    // Save the current position (for wall collisions).
     Vector2D oldPlayerPos = playerTransform.position;
-    // Get the current time in milliseconds.
     Uint32 currentTime = SDL_GetTicks();
 
-    // Update all entities.
+    // Refresh and update entities.
     manager.refresh();
     manager.update();
 
-    // Center the camera on the player's current position.
+    // Update camera
     camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
     camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
 
-    // Handle collisions with walls.
     handleCollisions(oldPlayerPos);
 
-    // --- Check for collisions between the player and enemy colliders ---
+    // Get the player's collider (declare only once).
     auto& playerCollider = player->getComponent<ColliderComponent>();
+
+    // PET COLLISIONS
+    for (auto& col : colliders) {
+        // Process only pet colliders whose entity is active.
+        if (col->tag == "pet" && col->entity->isActive()) {
+            if (Collision::AABB(playerCollider, *col)) {
+                petCount++;  // Increase pet counter.
+                std::cout << "Pet collected! Total pets: " << petCount << std::endl;
+                col->entity->destroy(); // Remove this pet from the game.
+            }
+        }
+    }
+
+    // ENEMY COLLISIONS (for damaging the player)
     bool collidedWithEnemy = false;
-    for (auto& col : Game::colliders) {
-        // Only consider if the entity is active.
+    for (auto& col : colliders) {
+        // Only consider enemy colliders that are still active.
         if (col->tag == "enemy" && col->entity->isActive()) {
             if (Collision::AABB(playerCollider, *col)) {
                 collidedWithEnemy = true;
@@ -202,22 +212,13 @@ void Game::update() {
         }
     }
 
-    // If a collision occurred and at least 1.5 seconds have passed since the last hit:
-    if (collidedWithEnemy && (currentTime - lastHitTime >= 1000)) {
-        heartCount--;  // Player loses one heart.
-        lastHitTime = currentTime;  // Update last hit time.
-        std::cout << "Player hit by enemy! Lives left: " << heartCount << std::endl;
-        if (heartCount <= 0) {
-            std::cout << "Game Over!" << std::endl;
-            isRunning = false;  // End the game.
-        }
-    }
-
-    // Optionally, print the player's position for debugging.
+    // Debug print player's position.
     std::cout << "Player position: ("
               << playerTransform.position.x << ", "
               << playerTransform.position.y << ")" << std::endl;
 }
+
+
 
 
 
