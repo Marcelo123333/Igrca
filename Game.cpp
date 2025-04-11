@@ -129,6 +129,11 @@ const int START_RIGHT  = 563;
 const int START_TOP    = 200;
 const int START_BOTTOM = 300;
 
+const int QUIT_LEFT    = 238;
+const int QUIT_RIGHT   = 564;
+const int QUIT_TOP     = 455;
+const int QUIT_BOTTOM  = 550;
+
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -156,31 +161,41 @@ void Game::handleEvents() {
         int winW, winH;
         SDL_GetWindowSize(window, &winW, &winH);
 
-        // Calculate scaling factors from the actual window size to your logical resolution (800x640).
+        // Calculate scaling factors from actual window size to logical resolution (800x640).
         float scaleX = 800.0f / winW;
         float scaleY = 640.0f / winH;
 
-        // Convert the raw mouse click coordinates to logical coordinates.
+        // Convert raw mouse click coordinates to logical coordinates.
         int clickX = static_cast<int>(event.button.x * scaleX);
         int clickY = static_cast<int>(event.button.y * scaleY);
 
-        std::cout << "Mouse click at logical coordinates: (" << clickX << ", " << clickY << ")\n";
+        std::cout << "Mouse click at logical coordinates: ("
+                  << clickX << ", " << clickY << ")\n";
 
-        // Check if the click falls strictly inside the start area.
-        if (clickX > START_LEFT &&
-            clickX < START_RIGHT &&
-            clickY > START_TOP &&
-            clickY < START_BOTTOM)
+        // Check if click is within the start button region.
+        if (clickX > START_LEFT && clickX < START_RIGHT &&
+            clickY > START_TOP  && clickY < START_BOTTOM)
         {
-            std::cout << "Click inside valid start area! Starting game...\n";
+            std::cout << "Click inside start button! Starting game...\n";
             inMenu = false;
             initializeGame();
-        } else {
-            std::cout << "Click outside valid start area. Game remains in menu.\n";
         }
-    } else {
-        // Bullet spawning logic.
-        // Convert mouse coordinates (screen) to world coordinates by adding camera offset.
+        // Check if click is within the quit button region.
+        else if (clickX > QUIT_LEFT && clickX < QUIT_RIGHT &&
+                 clickY > QUIT_TOP  && clickY < QUIT_BOTTOM)
+        {
+            std::cout << "Click inside quit button! Quitting game...\n";
+            isRunning = false;    // Set your game running flag to false so the main loop ends.
+            // Optionally, call SDL_Quit() and/or clean up resources here.
+        }
+        else {
+            std::cout << "Click outside valid buttons. Game remains in menu.\n";
+        }
+    }
+    else {
+        // When not in menu: Process bullet spawning as before.
+
+        // Convert mouse coordinates (screen) to world coordinates using camera offset.
         int mouseX = event.button.x + camera.x;
         int mouseY = event.button.y + camera.y;
 
@@ -211,6 +226,8 @@ void Game::handleEvents() {
         bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
     }
     break;
+
+
 }case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                     int newWidth = event.window.data1;
