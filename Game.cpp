@@ -183,10 +183,22 @@ void Game::update() {
     // --- Check for collisions between the player and enemy colliders ---
     auto& playerCollider = player->getComponent<ColliderComponent>();
     bool collidedWithEnemy = false;
-    for (auto& col : colliders) {
-        if (col->tag == "enemy" && Collision::AABB(playerCollider, *col)) {
-            collidedWithEnemy = true;
-            break;
+    for (auto& col : Game::colliders) {
+        // Only consider if the entity is active.
+        if (col->tag == "enemy" && col->entity->isActive()) {
+            if (Collision::AABB(playerCollider, *col)) {
+                collidedWithEnemy = true;
+                break;
+            }
+        }
+    }
+    if (collidedWithEnemy && (currentTime - lastHitTime >= 1000)) {
+        heartCount--;
+        lastHitTime = currentTime;
+        std::cout << "Player hit by enemy! Lives left: " << heartCount << std::endl;
+        if (heartCount <= 0) {
+            std::cout << "Game Over!" << std::endl;
+            isRunning = false;
         }
     }
 
