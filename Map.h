@@ -17,8 +17,9 @@ private:
     SDL_Rect src, dest;
     SDL_Texture* tla;
     SDL_Texture* zid;
+    SDL_Texture* trava;
 
-    int map[100][100];
+    int map[230][230];
 };
 
 #ifndef MAP_H

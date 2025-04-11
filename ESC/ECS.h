@@ -80,7 +80,7 @@ public:
         auto ptr(componentArray[getComponentTypeID<T>()]);
         return *static_cast<T*>(ptr);
     }
-    //gameobject.getComponent<PositionComponent>().setXpos(25); TAKO UPORABLJAMO TO KODO!!!!!!!!!!!!
+
 };
 
 class Manager {
