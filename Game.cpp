@@ -83,20 +83,24 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     // Initialize game state
     inMenu = true;
 }
+#include "Game.h"
+// ... other includes ...
+
 void Game::initializeGame() {
-    // Create our map and wall colliders.
+    // Create your map and wall colliders.
     map = new Map();
     map->LoadMap();
     map->CreateWallColliders(manager);
 
-    // Spawn the player and assign it to the global player pointer.
+    // Spawn the player using the stored start coordinates.
+    // If no mouse click occurs, these will remain at the default values (200, 200)
     player = &manager.addEntity();
-    player->addComponent<TransformComponent>(200.0f, 200.0f, 40, 43, 1);
+    player->addComponent<TransformComponent>(playerStartX, playerStartY, 40, 43, 1);
     player->addComponent<SpriteComponent>("Assets/Clovek.png");
     player->addComponent<KeyboardController>();
     player->addComponent<ColliderComponent>("player");
 
-    // Spawn enemies
+    // Spawn enemies.
     spawnEnemy(manager, 1330.0f, 395.0f);
     spawnEnemy(manager, 1925.0f, 1005.0f);
     spawnEnemy(manager, 1386.0f, 1035.0f);
@@ -108,72 +112,106 @@ void Game::initializeGame() {
     spawnEnemy(manager, 325.0f, 1245.0f);
     spawnEnemy(manager, 205.0f, 1960.0f);
 
-    // Initialize game stats
+    // Initialize game stats.
     petCount = 0;
     heartCount = 3;
     lastHitTime = 0;
 
-    // Spawn pets
+
     spawnPet(manager, 80.0f, 3045.0f);
     spawnPet(manager, 2805.0f, 2670.0f);
 }
-    void Game::handleEvents() {
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    isRunning = false;
+
+
+
+const int START_LEFT   = 237;
+const int START_RIGHT  = 563;
+const int START_TOP    = 200;
+const int START_BOTTOM = 300;
+
+void Game::handleEvents() {
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                isRunning = false;
                 break;
 
-                case SDL_MOUSEMOTION:
-                    // Update mouse position
-                        mouseX = event.motion.x;
+            case SDL_MOUSEMOTION:
+                mouseX = event.motion.x;
                 mouseY = event.motion.y;
-
                 if (inMenu) {
-                    // Continuous mouse position output in menu
                     std::cout << "Menu Mouse: (" << mouseX << ", " << mouseY << ")\n";
                 }
                 break;
+
             case SDL_KEYDOWN:
                 if (inMenu && event.key.keysym.sym == SDLK_SPACE) {
-                    inMenu = false;
-                    // Initialize the actual game when leaving menu
-                    initializeGame();
+                    std::cout << "Space pressed—ignoring because start button must be clicked.\n";
                 }
-            break;
-            case SDL_MOUSEBUTTONDOWN: {
-                // Convert mouse coordinates (screen) to world coordinates by adding camera offset.
-                int mouseX = event.button.x + camera.x;
-                int mouseY = event.button.y + camera.y;
-
-                // Get player's center from its TransformComponent.
-                auto& playerTransform = player->getComponent<TransformComponent>();
-                float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
-                float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
-
-                // Compute direction vector from player center to mouse click.
-                float dx = mouseX - playerCenterX;
-                float dy = mouseY - playerCenterY;
-                float length = std::sqrt(dx * dx + dy * dy);
-                Vector2D direction = { 0, 0 };
-                if (length != 0) {
-                    direction.x = dx / length;
-                    direction.y = dy / length;
-                }
-
-                // Calculate spawn offset so bullet appears away from the player.
-                float spawnOffset = playerTransform.width / 2 + 10;
-                float bulletStartX = playerCenterX + direction.x * spawnOffset;
-                float bulletStartY = playerCenterY + direction.y * spawnOffset;
-
-                // Create a bullet entity.
-                auto& bullet = manager.addEntity();
-                bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
-                bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
-                bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
                 break;
-            }
-            case SDL_WINDOWEVENT:
+
+            case SDL_MOUSEBUTTONDOWN: {
+    if (inMenu) {
+        // Get the current window size.
+        int winW, winH;
+        SDL_GetWindowSize(window, &winW, &winH);
+
+        // Calculate scaling factors from the actual window size to your logical resolution (800x640).
+        float scaleX = 800.0f / winW;
+        float scaleY = 640.0f / winH;
+
+        // Convert the raw mouse click coordinates to logical coordinates.
+        int clickX = static_cast<int>(event.button.x * scaleX);
+        int clickY = static_cast<int>(event.button.y * scaleY);
+
+        std::cout << "Mouse click at logical coordinates: (" << clickX << ", " << clickY << ")\n";
+
+        // Check if the click falls strictly inside the start area.
+        if (clickX > START_LEFT &&
+            clickX < START_RIGHT &&
+            clickY > START_TOP &&
+            clickY < START_BOTTOM)
+        {
+            std::cout << "Click inside valid start area! Starting game...\n";
+            inMenu = false;
+            initializeGame();
+        } else {
+            std::cout << "Click outside valid start area. Game remains in menu.\n";
+        }
+    } else {
+        // Bullet spawning logic.
+        // Convert mouse coordinates (screen) to world coordinates by adding camera offset.
+        int mouseX = event.button.x + camera.x;
+        int mouseY = event.button.y + camera.y;
+
+        // Get player's center from its TransformComponent.
+        auto& playerTransform = player->getComponent<TransformComponent>();
+        float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
+        float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
+
+        // Compute direction vector from player center to mouse click.
+        float dx = mouseX - playerCenterX;
+        float dy = mouseY - playerCenterY;
+        float length = std::sqrt(dx * dx + dy * dy);
+        Vector2D direction = { 0, 0 };
+        if (length != 0) {
+            direction.x = dx / length;
+            direction.y = dy / length;
+        }
+
+        // Calculate spawn offset so bullet appears away from the player.
+        float spawnOffset = playerTransform.width / 2 + 10;
+        float bulletStartX = playerCenterX + direction.x * spawnOffset;
+        float bulletStartY = playerCenterY + direction.y * spawnOffset;
+
+        // Create a bullet entity.
+        auto& bullet = manager.addEntity();
+        bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
+        bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
+        bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
+    }
+    break;
+}case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                     int newWidth = event.window.data1;
                     int newHeight = event.window.data2;
@@ -181,12 +219,16 @@ void Game::initializeGame() {
                     camera.w = newWidth;
                     camera.h = newHeight;
                 }
-            break;
+                break;
+
             default:
                 break;
         }
     }
 }
+
+
+
 
 void Game::update() {
     if (inMenu) {
@@ -248,6 +290,7 @@ void Game::update() {
             isRunning = false;
         }
     }
+
 }
 
 

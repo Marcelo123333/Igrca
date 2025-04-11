@@ -5,6 +5,9 @@
 class ColliderComponent;
 class Map;
 
+// In Game.h
+
+// In Game.h
 class Game {
 public:
     Game();
@@ -25,13 +28,11 @@ public:
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
 
-    int petCount;      // Already used elsewhere.
-    int heartCount;    // Number of lives (hearts) for the player.
-    Uint32 lastHitTime; // Timestamp (in ms) of the last enemy collision.
-
+    int petCount;
+    int heartCount;
+    Uint32 lastHitTime;
 
 private:
-
     Uint32 lastMousePositionLogTime = 0;
     const Uint32 mouseLogInterval = 1000;
     int mouseX = 0;
@@ -41,5 +42,18 @@ private:
     bool isRunning;
     SDL_Window* window;
     Map* map;
+
+    // Player starting position defaults.
+    int playerStartX = 200;  // Default starting position X
+    int playerStartY = 200;  // Default starting position Y
+
+    // initializeGame still takes no parameters.
     void initializeGame();
 };
+
+#ifndef GAME_H
+#define GAME_H
+// ... rest of header
+#endif // GAME_H
+
+

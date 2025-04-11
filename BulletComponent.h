@@ -63,11 +63,11 @@ public:
 
         // Next, check collision against enemy colliders.
         for (auto& col : Game::colliders) {
-            if (col->tag == "enemy") {
+            if (col->tag == "enemy" && col->entity->isActive()) {  // Only process active enemies.
                 if (Collision::AABB(bulletCollider, *col)) {
-                    // If the bullet collides with an enemy, destroy both enemy and bullet.
-                    col->entity->destroy();  // Destroy enemy.
-                    entity->destroy();         // Destroy bullet.
+                    // If the bullet collides with an active enemy, destroy both enemy and bullet.
+                    col->entity->destroy();
+                    entity->destroy();
                     return;
                 }
             }
