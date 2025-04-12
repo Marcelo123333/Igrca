@@ -101,16 +101,24 @@ void Game::initializeGame() {
     player->addComponent<ColliderComponent>("player");
 
     // Spawn enemies.
-    spawnEnemy(manager, 1330.0f, 395.0f);
-    spawnEnemy(manager, 1925.0f, 1005.0f);
-    spawnEnemy(manager, 1386.0f, 1035.0f);
-    spawnEnemy(manager, 1025.0f, 1740.0f);
-    spawnEnemy(manager, 1510.0f, 2635.0f);
-    spawnEnemy(manager, 1960.0f, 2305.0f);
-    spawnEnemy(manager, 95.0f, 2860.0f);
-    spawnEnemy(manager, 390.0f, 3035.0f);
-    spawnEnemy(manager, 325.0f, 1245.0f);
-    spawnEnemy(manager, 205.0f, 1960.0f);
+    spawnEnemy(manager, 5775.0f, 5645.0f);
+    spawnEnemy(manager, 6117.0f, 5319.0f);
+    spawnEnemy(manager, 5992.0f, 4749.0f);
+    spawnEnemy(manager, 6462.0f, 4734.0f);
+    spawnEnemy(manager, 5938.0f, 4509.0f);
+    spawnEnemy(manager, 4506.0f, 2305.0f);
+    spawnEnemy(manager, 6314.0f, 2022.0f);
+    spawnEnemy(manager, 6430.0f, 2131.0f);
+    spawnEnemy(manager, 5772.0f, 1211.0f);
+    spawnEnemy(manager, 5710.0f, 550.0f);
+    spawnEnemy(manager, 2435.0f, 2166.0f);
+    spawnEnemy(manager, 3191.0f, 2637.0f);
+    spawnEnemy(manager, 3578.0f, 3489.0f);
+    spawnEnemy(manager, 3854.0f, 4170.0f);
+    spawnEnemy(manager, 1413.0f, 4490.0f);
+    spawnEnemy(manager, 1630.0f, 4670.0f);
+    spawnEnemy(manager, 1473.0f, 3615.0f);
+    spawnEnemy(manager, 1600.0f, 3730.0f);
 
     // Initialize game stats.
     petCount = 0;
@@ -118,8 +126,14 @@ void Game::initializeGame() {
     lastHitTime = 0;
 
 
-    spawnPet(manager, 80.0f, 3045.0f);
-    spawnPet(manager, 2805.0f, 2670.0f);
+    spawnPet(manager, 6563.0f, 4801.0f);
+    spawnPet(manager, 6156.0f, 4520.0f);
+    spawnPet(manager, 6119.0f, 1555.0f);
+    spawnPet(manager, 5825.0f, 886.0f);
+    spawnPet(manager, 5330.0f, 522.0f);
+    spawnPet(manager, 3490.0f, 1879.0f);
+    spawnPet(manager, 4066.0f, 4302.0f);
+    spawnPet(manager, 1361.0f, 4667.0f);
 }
 
 
