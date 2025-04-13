@@ -17,7 +17,7 @@ public:
     Uint32 lastBoostTime = 0;
     // Boost parameters in milliseconds:
     const Uint32 boostDuration = 500;      // Boost lasts 0.5 sec (500 ms)
-    const Uint32 boostDelay = 5000;          // Cooldown period of 5 sec (5000 ms)
+    const Uint32 boostDelay = 3000;          // Cooldown period of 5 sec (5000 ms)
 
     void init() override {
         transform = &entity->getComponent<TransformComponent>();
