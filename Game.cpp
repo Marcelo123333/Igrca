@@ -106,7 +106,6 @@ void Game::initializeGame() {
     spawnEnemy(manager, 5992.0f, 4749.0f);
     spawnEnemy(manager, 6462.0f, 4734.0f);
     spawnEnemy(manager, 5938.0f, 4509.0f);
-    spawnEnemy(manager, 4506.0f, 2305.0f);
     spawnEnemy(manager, 6314.0f, 2022.0f);
     spawnEnemy(manager, 6430.0f, 2131.0f);
     spawnEnemy(manager, 5772.0f, 1211.0f);
