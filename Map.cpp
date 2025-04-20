@@ -11,6 +11,8 @@ Map::Map() {
     tla = TextureManager::LoadTexture("Assets/Tla.png");
     zid = TextureManager::LoadTexture("Assets/Zid.png");
     trava = TextureManager::LoadTexture("Assets/Trava.png");
+    wood = TextureManager::LoadTexture("Assets/Wood.png");
+    shelter = TextureManager::LoadTexture("Assets/Shelter.png");
 
     // Load the map from the text file instead of a hardcoded array
     LoadMap();
@@ -25,6 +27,8 @@ Map::Map() {
 Map::~Map() {
     SDL_DestroyTexture(tla);
     SDL_DestroyTexture(zid);
+    SDL_DestroyTexture(wood);
+    SDL_DestroyTexture(shelter);
 }
 
 void Map::LoadMap() {
@@ -65,13 +69,19 @@ void Map::DrawMap() {
             switch (type) {
                 case 0:
                     TextureManager::Draw(tla, src, dest);
-                    break;
+                break;
                 case 1:
                     TextureManager::Draw(zid, src, dest);
-                    break;
+                break;
                 case 2:
                     TextureManager::Draw(trava, src, dest);
-                    break;
+                break;
+                case 3:
+                    TextureManager::Draw(wood, src, dest);
+                break;
+                case 4:
+                    TextureManager::Draw(shelter, src, dest);
+                break;
                 default:
                     break;
             }
@@ -83,7 +93,7 @@ void Map::CreateWallColliders(Manager& manager) {
     // Iterate through the map array to create colliders for wall tiles (value 1)
     for (int row = 0; row < 230; row++) {
         for (int column = 0; column < 230; column++) {
-            if (map[row][column] == 1) { // If it's a wall
+            if (map[row][column] == 1 || map[row][column] == 3)  { // If it's a wall
                 auto& wall(manager.addEntity());
 
                 // Add transform and collider components

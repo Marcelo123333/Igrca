@@ -12,12 +12,17 @@ public:
 
     // New method to create wall colliders
     void CreateWallColliders(Manager& manager);
+    int getTile(int row, int col) const {
+        return map[row][col];
+    }
 
 private:
     SDL_Rect src, dest;
     SDL_Texture* tla;
     SDL_Texture* zid;
     SDL_Texture* trava;
+    SDL_Texture* wood;
+    SDL_Texture* shelter;
 
     int map[230][230];
 };

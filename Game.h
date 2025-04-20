@@ -28,6 +28,7 @@ public:
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
 
+    int storedPets = 0;
     int petCount;
     int heartCount;
     Uint32 lastHitTime;

@@ -298,6 +298,7 @@ void Game::update() {
         if (col->tag == "pet" && col->entity->isActive()) {
             if (Collision::AABB(playerCollider, *col)) {
                 petCount++;
+                std::cout << "Pet collected! Total pets: " << petCount << std::endl;
                 col->entity->destroy();
             }
         }
@@ -321,6 +322,17 @@ void Game::update() {
         }
     }
 
+    int tileX = static_cast<int>(playerTransform.position.x + playerTransform.width / 2) / 32;
+    int tileY = static_cast<int>(playerTransform.position.y + playerTransform.height / 2) / 32;
+
+    if (tileX >= 0 && tileX < 230 && tileY >= 0 && tileY < 230) {
+        if (map->getTile(tileY, tileX) == 4 && petCount > 0) {
+            storedPets += petCount;
+            std::cout << "Stored " << petCount << " pets in the shelter!" << std::endl;
+            std::cout << "Total stored pets: " << storedPets << std::endl;
+            petCount = 0;
+        }
+    }
 }
 
 
