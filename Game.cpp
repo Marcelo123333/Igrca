@@ -18,6 +18,7 @@
 #include "TextureManager.h"
 #include "BulletComponent.h"   // Include bullet component header
 #include "Collision.h"         // Include collision header
+#include <fstream>
 
 // Undefine any conflicting macros.
 #ifdef byte
@@ -134,7 +135,7 @@ void Game::initializeGame() {
     petCount = 0;
     heartCount = 3;
     lastHitTime = 0;
-
+    storedPets = 0;
 
     spawnPet(manager, 6563.0f, 4801.0f);
     spawnPet(manager, 6156.0f, 4520.0f);
@@ -168,10 +169,21 @@ const int WIN_QUIT_RIGHT  = 566;
 const int WIN_QUIT_TOP    = 334;
 const int WIN_QUIT_BOTTOM = 447;
 
+const int PAUSE_SAVE_LEFT   = 229;
+const int PAUSE_SAVE_RIGHT  = 571;
+const int PAUSE_SAVE_TOP    = 183;
+const int PAUSE_SAVE_BOTTOM = 264;
+
+const int LOAD_LEFT   = 237;
+const int LOAD_RIGHT  = 563;
+const int LOAD_TOP    = 328;
+const int LOAD_BOTTOM = 425;
+
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
+                saveGame();
                 isRunning = false;
                 break;
 
@@ -205,29 +217,37 @@ void Game::handleEvents() {
                 // --- MENU MODE ---
                 if (inMenu) {
                     if (clickX > START_LEFT && clickX < START_RIGHT &&
-                        clickY > START_TOP  && clickY < START_BOTTOM)
-                    {
+                        clickY > START_TOP && clickY < START_BOTTOM) {
                         std::cout << "Click inside start button! Starting game...\n";
                         inMenu = false;
                         initializeGame();
-                    }
+                        }
                     else if (clickX > QUIT_LEFT && clickX < QUIT_RIGHT &&
-                             clickY > QUIT_TOP  && clickY < QUIT_BOTTOM)
-                    {
+                             clickY > QUIT_TOP && clickY < QUIT_BOTTOM) {
+                        saveGame();
                         std::cout << "Click inside quit button! Quitting game...\n";
                         isRunning = false;
-                    }
+                             }
+                    else if (clickX > LOAD_LEFT && clickX < LOAD_RIGHT &&
+                             clickY > LOAD_TOP && clickY < LOAD_BOTTOM) {
+                        std::cout << "Click inside load button! Loading game...\n";
+                        loadGame();
+                             }
                     return;
                 }
 
                 // --- PAUSE MODE ---
                 if (isPaused) {
                     if (clickX > PAUSE_QUIT_LEFT && clickX < PAUSE_QUIT_RIGHT &&
-                        clickY > PAUSE_QUIT_TOP  && clickY < PAUSE_QUIT_BOTTOM)
-                    {
+                        clickY > PAUSE_QUIT_TOP && clickY < PAUSE_QUIT_BOTTOM) {
+                        saveGame();
                         std::cout << "Clicked Quit on pause screen. Exiting game...\n";
                         isRunning = false;
-                    }
+                        }
+                    else if (clickX > PAUSE_SAVE_LEFT && clickX < PAUSE_SAVE_RIGHT &&
+                             clickY > PAUSE_SAVE_TOP && clickY < PAUSE_SAVE_BOTTOM) {
+                        saveGame();
+                             }
                     return;
                 }
 
@@ -236,6 +256,7 @@ void Game::handleEvents() {
                     if (clickX > WIN_QUIT_LEFT && clickX < WIN_QUIT_RIGHT &&
                         clickY > WIN_QUIT_TOP  && clickY < WIN_QUIT_BOTTOM)
                     {
+                        saveGame();
                         std::cout << "Clicked Quit on win screen. Exiting game...\n";
                         isRunning = false;
                     }
@@ -445,6 +466,87 @@ void Game::render() {
     }
     SDL_RenderPresent(renderer);
 }
+
+void Game::saveGame() {
+    std::ofstream saveFile("savegame.txt");
+    if (saveFile.is_open()) {
+        auto& playerTransform = player->getComponent<TransformComponent>();
+
+        saveFile << "petCount " << petCount << "\n";
+        saveFile << "storedPets " << storedPets << "\n";
+        saveFile << "heartCount " << heartCount << "\n";
+        saveFile << "playerX " << playerTransform.position.x << "\n";
+        saveFile << "playerY " << playerTransform.position.y << "\n";
+
+        // Save enemy positions
+        for (auto& col : Game::colliders) {
+            if (col->tag == "enemy" && col->entity->isActive()) {
+                auto& enemyTransform = col->entity->getComponent<TransformComponent>();
+                saveFile << "enemy " << enemyTransform.position.x << " "
+                         << enemyTransform.position.y << "\n";
+            }
+        }
+
+        saveFile.close();
+        std::cout << "Game saved successfully.\n";
+    } else {
+        std::cout << "Failed to open save file.\n";
+    }
+}
+
+void Game::loadGame() {
+    std::ifstream loadFile("savegame.txt");
+    if (!loadFile.is_open()) {
+        std::cout << "No save file found.\n";
+        return;
+    }
+
+    int loadedPetCount = 0, loadedStoredPets = 0, loadedHeartCount = 3;
+    float playerX = 200.0f, playerY = 200.0f;
+    std::vector<Vector2D> enemyPositions;
+
+    std::string label;
+    while (loadFile >> label) {
+        if (label == "petCount") loadFile >> loadedPetCount;
+        else if (label == "storedPets") loadFile >> loadedStoredPets;
+        else if (label == "heartCount") loadFile >> loadedHeartCount;
+        else if (label == "playerX") loadFile >> playerX;
+        else if (label == "playerY") loadFile >> playerY;
+        else if (label == "enemy") {
+            float x, y;
+            loadFile >> x >> y;
+            enemyPositions.emplace_back(x, y);
+        }
+    }
+    loadFile.close();
+
+    std::cout << "Save file loaded.\n";
+
+    // Apply loaded values
+    petCount = loadedPetCount;
+    storedPets = loadedStoredPets;
+    heartCount = loadedHeartCount;
+    playerStartX = static_cast<int>(playerX);
+    playerStartY = static_cast<int>(playerY);
+
+    inMenu = false;
+
+    // Start fresh
+    initializeGame();
+
+    // Remove all default enemies that were spawned
+    for (auto& col : Game::colliders) {
+        if (col->tag == "enemy") {
+            col->entity->destroy();
+        }
+    }
+
+    // Re-spawn loaded enemies
+    for (const auto& pos : enemyPositions) {
+        spawnEnemy(manager, pos.x, pos.y);
+    }
+}
+
 
 // Modify the clean function to clean up menu resources
 void Game::clean() {

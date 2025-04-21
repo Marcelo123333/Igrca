@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Game.h"
 
+
 int main(int argc, char* argv[]) {
     // Optionally allocate a console (if you need one)
     AllocConsole();
@@ -19,7 +20,6 @@ int main(int argc, char* argv[]) {
 
     Uint32 frameStart;
     int frameTime;
-
     // Main game loop
     while (game->running()) {
         frameStart = SDL_GetTicks();

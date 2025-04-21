@@ -12,30 +12,34 @@ class Game {
 public:
     Game();
     ~Game();
+
     void init(const char* title, int width, int height, bool fullscreen);
     void handleEvents();
     void update();
     void render();
     void clean();
+
     void handleCollisions(class Vector2D oldPlayerPos);
     bool running() { return isRunning; }
+
     static bool inMenu;
     static SDL_Texture* menuTexture;
-    bool isInMenu() const { return inMenu; }
+    static SDL_Texture* pauseTexture;
+    static SDL_Texture* winTexture;
 
     static SDL_Event event;
     static SDL_Renderer* renderer;
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
-    static SDL_Texture* winTexture;
-    static SDL_Texture* pauseTexture;
 
-    int storedPets = 0;
     int petCount;
+    int storedPets;
     int heartCount;
     Uint32 lastHitTime;
-    bool gameWon = false;
-    bool isPaused = false;
+
+    // ✅ Add these:
+    void saveGame();
+    void loadGame();
 
 private:
     Uint32 lastMousePositionLogTime = 0;
@@ -43,18 +47,19 @@ private:
     int mouseX = 0;
     int mouseY = 0;
     bool showMousePosition = true;
-    int cnt = 0;
     bool isRunning;
+    bool isPaused = false;
+    bool gameWon = false;
+
     SDL_Window* window;
     Map* map;
 
-    // Player starting position defaults.
-    int playerStartX = 200;  // Default starting position X
-    int playerStartY = 200;  // Default starting position Y
+    int playerStartX = 200;
+    int playerStartY = 200;
 
-    // initializeGame still takes no parameters.
     void initializeGame();
 };
+
 
 #ifndef GAME_H
 #define GAME_H
