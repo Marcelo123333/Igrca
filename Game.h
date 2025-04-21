@@ -27,11 +27,15 @@ public:
     static SDL_Renderer* renderer;
     static std::vector<ColliderComponent*> colliders;
     static SDL_Rect camera;
+    static SDL_Texture* winTexture;
+    static SDL_Texture* pauseTexture;
 
     int storedPets = 0;
     int petCount;
     int heartCount;
     Uint32 lastHitTime;
+    bool gameWon = false;
+    bool isPaused = false;
 
 private:
     Uint32 lastMousePositionLogTime = 0;

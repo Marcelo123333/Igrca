@@ -34,6 +34,9 @@ SDL_Rect Game::camera = { 0, 0, 800, 640 };
 Entity* player = nullptr;
 bool Game::inMenu = true;
 SDL_Texture* Game::menuTexture = nullptr;
+SDL_Texture* Game::winTexture = nullptr;
+SDL_Texture* Game::pauseTexture = nullptr;
+
 Game::Game() : isRunning(false), window(nullptr), map(nullptr) { }
 Game::~Game() { }
 
@@ -74,17 +77,25 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         isRunning = true;
     }
     lastMousePositionLogTime = SDL_GetTicks();
-    // Load menu texture
+    // MENU TEXTURA
     menuTexture = TextureManager::LoadTexture("Assets/Menu.png");
     if (!menuTexture) {
         std::cout << "Failed to load menu texture!" << std::endl;
     }
-
+    // ZMAGA TEXTURA
+    winTexture = TextureManager::LoadTexture("Assets/WinScreen.png");
+    if (!winTexture) {
+        std::cout << "Failed to load win screen texture!" << std::endl;
+    }
+    //PAUSE TEXTURA
+    pauseTexture = TextureManager::LoadTexture("Assets/PauseScreen.png");
+    if (!pauseTexture) {
+        std::cout << "Failed to load pause screen texture!" << std::endl;
+    }
     // Initialize game state
     inMenu = true;
 }
-#include "Game.h"
-// ... other includes ...
+
 
 void Game::initializeGame() {
     // Create your map and wall colliders.
@@ -147,6 +158,16 @@ const int QUIT_RIGHT   = 564;
 const int QUIT_TOP     = 455;
 const int QUIT_BOTTOM  = 550;
 
+const int PAUSE_QUIT_LEFT   = 230;
+const int PAUSE_QUIT_RIGHT  = 571;
+const int PAUSE_QUIT_TOP    = 360;
+const int PAUSE_QUIT_BOTTOM = 459;
+
+const int WIN_QUIT_LEFT   = 232;
+const int WIN_QUIT_RIGHT  = 566;
+const int WIN_QUIT_TOP    = 334;
+const int WIN_QUIT_BOTTOM = 447;
+
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -165,83 +186,94 @@ void Game::handleEvents() {
             case SDL_KEYDOWN:
                 if (inMenu && event.key.keysym.sym == SDLK_SPACE) {
                     std::cout << "Space pressed—ignoring because start button must be clicked.\n";
+                } else if (!inMenu && !gameWon && event.key.keysym.sym == SDLK_ESCAPE) {
+                    isPaused = !isPaused;
+                    std::cout << (isPaused ? "Game paused." : "Game unpaused.") << std::endl;
                 }
                 break;
 
             case SDL_MOUSEBUTTONDOWN: {
-    if (inMenu) {
-        // Get the current window size.
-        int winW, winH;
-        SDL_GetWindowSize(window, &winW, &winH);
+                int winW, winH;
+                SDL_GetWindowSize(window, &winW, &winH);
 
-        // Calculate scaling factors from actual window size to logical resolution (800x640).
-        float scaleX = 800.0f / winW;
-        float scaleY = 640.0f / winH;
+                float scaleX = 800.0f / winW;
+                float scaleY = 640.0f / winH;
 
-        // Convert raw mouse click coordinates to logical coordinates.
-        int clickX = static_cast<int>(event.button.x * scaleX);
-        int clickY = static_cast<int>(event.button.y * scaleY);
+                int clickX = static_cast<int>(event.button.x * scaleX);
+                int clickY = static_cast<int>(event.button.y * scaleY);
 
-        std::cout << "Mouse click at logical coordinates: ("
-                  << clickX << ", " << clickY << ")\n";
+                // --- MENU MODE ---
+                if (inMenu) {
+                    if (clickX > START_LEFT && clickX < START_RIGHT &&
+                        clickY > START_TOP  && clickY < START_BOTTOM)
+                    {
+                        std::cout << "Click inside start button! Starting game...\n";
+                        inMenu = false;
+                        initializeGame();
+                    }
+                    else if (clickX > QUIT_LEFT && clickX < QUIT_RIGHT &&
+                             clickY > QUIT_TOP  && clickY < QUIT_BOTTOM)
+                    {
+                        std::cout << "Click inside quit button! Quitting game...\n";
+                        isRunning = false;
+                    }
+                    return;
+                }
 
-        // Check if click is within the start button region.
-        if (clickX > START_LEFT && clickX < START_RIGHT &&
-            clickY > START_TOP  && clickY < START_BOTTOM)
-        {
-            std::cout << "Click inside start button! Starting game...\n";
-            inMenu = false;
-            initializeGame();
-        }
-        // Check if click is within the quit button region.
-        else if (clickX > QUIT_LEFT && clickX < QUIT_RIGHT &&
-                 clickY > QUIT_TOP  && clickY < QUIT_BOTTOM)
-        {
-            std::cout << "Click inside quit button! Quitting game...\n";
-            isRunning = false;    // Set your game running flag to false so the main loop ends.
-            // Optionally, call SDL_Quit() and/or clean up resources here.
-        }
-        else {
-            std::cout << "Click outside valid buttons. Game remains in menu.\n";
-        }
-    }
-    else {
-        // When not in menu: Process bullet spawning as before.
+                // --- PAUSE MODE ---
+                if (isPaused) {
+                    if (clickX > PAUSE_QUIT_LEFT && clickX < PAUSE_QUIT_RIGHT &&
+                        clickY > PAUSE_QUIT_TOP  && clickY < PAUSE_QUIT_BOTTOM)
+                    {
+                        std::cout << "Clicked Quit on pause screen. Exiting game...\n";
+                        isRunning = false;
+                    }
+                    return;
+                }
 
-        // Convert mouse coordinates (screen) to world coordinates using camera offset.
-        int mouseX = event.button.x + camera.x;
-        int mouseY = event.button.y + camera.y;
+                // --- WIN MODE ---
+                if (gameWon) {
+                    if (clickX > WIN_QUIT_LEFT && clickX < WIN_QUIT_RIGHT &&
+                        clickY > WIN_QUIT_TOP  && clickY < WIN_QUIT_BOTTOM)
+                    {
+                        std::cout << "Clicked Quit on win screen. Exiting game...\n";
+                        isRunning = false;
+                    }
+                    return;
+                }
 
-        // Get player's center from its TransformComponent.
-        auto& playerTransform = player->getComponent<TransformComponent>();
-        float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
-        float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
+                // --- GAMEPLAY MODE ---
+                if (!inMenu && !isPaused && !gameWon) {
+                    int mouseX = event.button.x + camera.x;
+                    int mouseY = event.button.y + camera.y;
 
-        // Compute direction vector from player center to mouse click.
-        float dx = mouseX - playerCenterX;
-        float dy = mouseY - playerCenterY;
-        float length = std::sqrt(dx * dx + dy * dy);
-        Vector2D direction = { 0, 0 };
-        if (length != 0) {
-            direction.x = dx / length;
-            direction.y = dy / length;
-        }
+                    auto& playerTransform = player->getComponent<TransformComponent>();
+                    float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
+                    float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
 
-        // Calculate spawn offset so bullet appears away from the player.
-        float spawnOffset = playerTransform.width / 2 + 10;
-        float bulletStartX = playerCenterX + direction.x * spawnOffset;
-        float bulletStartY = playerCenterY + direction.y * spawnOffset;
+                    float dx = mouseX - playerCenterX;
+                    float dy = mouseY - playerCenterY;
+                    float length = std::sqrt(dx * dx + dy * dy);
 
-        // Create a bullet entity.
-        auto& bullet = manager.addEntity();
-        bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
-        bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
-        bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
-    }
-    break;
+                    Vector2D direction = { 0, 0 };
+                    if (length != 0) {
+                        direction.x = dx / length;
+                        direction.y = dy / length;
+                    }
 
+                    float spawnOffset = playerTransform.width / 2 + 10;
+                    float bulletStartX = playerCenterX + direction.x * spawnOffset;
+                    float bulletStartY = playerCenterY + direction.y * spawnOffset;
 
-}case SDL_WINDOWEVENT:
+                    auto& bullet = manager.addEntity();
+                    bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
+                    bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
+                    bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
+                }
+                break;
+            }
+
+            case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                     int newWidth = event.window.data1;
                     int newHeight = event.window.data2;
@@ -262,7 +294,10 @@ void Game::handleEvents() {
 
 void Game::update() {
     if (inMenu) {
-        return; // Don't update game logic while in menu
+        return;
+    }
+    if (isPaused || gameWon) {
+        return;
     }
     Uint32 currentTime = SDL_GetTicks();
 
@@ -333,6 +368,10 @@ void Game::update() {
             petCount = 0;
         }
     }
+    if (storedPets >= 8 && !gameWon) {
+        gameWon = true;
+        std::cout << "🎉 You won the game! 🎉" << std::endl;
+    }
 }
 
 
@@ -381,7 +420,12 @@ void Game::handleCollisions(Vector2D oldPlayerPos) {
 
 void Game::render() {
     SDL_RenderClear(renderer);
-
+    if (gameWon) {
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, winTexture, NULL, NULL);
+        SDL_RenderPresent(renderer);
+        return;
+    }
     if (inMenu) {
         // Render menu background
         SDL_RenderCopy(renderer, menuTexture, NULL, NULL);
@@ -396,7 +440,9 @@ void Game::render() {
         map->DrawMap();
         manager.draw();
     }
-
+    if (isPaused) {
+        SDL_RenderCopy(renderer, pauseTexture, NULL, NULL);
+    }
     SDL_RenderPresent(renderer);
 }
 
@@ -404,6 +450,12 @@ void Game::render() {
 void Game::clean() {
     if (menuTexture) {
         SDL_DestroyTexture(menuTexture);
+    }
+    if (winTexture) {
+        SDL_DestroyTexture(winTexture);
+    }
+    if (pauseTexture) {
+        SDL_DestroyTexture(pauseTexture);
     }
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
