@@ -99,6 +99,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 
 void Game::initializeGame() {
+    recorder.begin();
     // Create your map and wall colliders.
     map = new Map();
     map->LoadMap();
@@ -135,7 +136,7 @@ void Game::initializeGame() {
     petCount = 0;
     heartCount = 3;
     lastHitTime = 0;
-    storedPets = 0;
+    storedPets = 7;
 
     spawnPet(manager, 6563.0f, 4801.0f);
     spawnPet(manager, 6156.0f, 4520.0f);
@@ -145,6 +146,7 @@ void Game::initializeGame() {
     spawnPet(manager, 3490.0f, 1879.0f);
     spawnPet(manager, 4066.0f, 4302.0f);
     spawnPet(manager, 1361.0f, 4667.0f);
+    spawnPet(manager, 436.0f, 206.0f);
 }
 
 
@@ -179,6 +181,11 @@ const int LOAD_RIGHT  = 563;
 const int LOAD_TOP    = 328;
 const int LOAD_BOTTOM = 425;
 
+const int WIN_REPLAY_LEFT   = 234;  // adjust as needed
+const int WIN_REPLAY_RIGHT  = 569;
+const int WIN_REPLAY_TOP    = 205;
+const int WIN_REPLAY_BOTTOM = 318;
+
 void Game::handleEvents() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -193,114 +200,156 @@ void Game::handleEvents() {
                 if (inMenu) {
                     std::cout << "Menu Mouse: (" << mouseX << ", " << mouseY << ")\n";
                 }
+                else if (gameWon) {
+                    std::cout << "Win Screen Mouse: (" << mouseX << ", " << mouseY << ")\n";
+                }
                 break;
 
             case SDL_KEYDOWN:
                 if (inMenu && event.key.keysym.sym == SDLK_SPACE) {
-                    std::cout << "Space pressed—ignoring because start button must be clicked.\n";
-                } else if (!inMenu && !gameWon && event.key.keysym.sym == SDLK_ESCAPE) {
+                    // ignore
+                }
+                else if (!inMenu && !gameWon && event.key.keysym.sym == SDLK_ESCAPE) {
                     isPaused = !isPaused;
-                    std::cout << (isPaused ? "Game paused." : "Game unpaused.") << std::endl;
+                    std::cout << (isPaused ? "Game paused." : "Game unpaused.") << "\n";
                 }
                 break;
 
             case SDL_MOUSEBUTTONDOWN: {
                 int winW, winH;
                 SDL_GetWindowSize(window, &winW, &winH);
-
                 float scaleX = 800.0f / winW;
                 float scaleY = 640.0f / winH;
-
                 int clickX = static_cast<int>(event.button.x * scaleX);
                 int clickY = static_cast<int>(event.button.y * scaleY);
 
-                // --- MENU MODE ---
+                // --- MENU ---
                 if (inMenu) {
                     if (clickX > START_LEFT && clickX < START_RIGHT &&
-                        clickY > START_TOP && clickY < START_BOTTOM) {
-                        std::cout << "Click inside start button! Starting game...\n";
+                        clickY > START_TOP  && clickY < START_BOTTOM)
+                    {
                         inMenu = false;
                         initializeGame();
-                        }
+                    }
                     else if (clickX > QUIT_LEFT && clickX < QUIT_RIGHT &&
-                             clickY > QUIT_TOP && clickY < QUIT_BOTTOM) {
-                        saveGame();
-                        std::cout << "Click inside quit button! Quitting game...\n";
-                        isRunning = false;
-                             }
-                    else if (clickX > LOAD_LEFT && clickX < LOAD_RIGHT &&
-                             clickY > LOAD_TOP && clickY < LOAD_BOTTOM) {
-                        std::cout << "Click inside load button! Loading game...\n";
-                        loadGame();
-                             }
-                    return;
-                }
-
-                // --- PAUSE MODE ---
-                if (isPaused) {
-                    if (clickX > PAUSE_QUIT_LEFT && clickX < PAUSE_QUIT_RIGHT &&
-                        clickY > PAUSE_QUIT_TOP && clickY < PAUSE_QUIT_BOTTOM) {
-                        saveGame();
-                        std::cout << "Clicked Quit on pause screen. Exiting game...\n";
-                        isRunning = false;
-                        }
-                    else if (clickX > PAUSE_SAVE_LEFT && clickX < PAUSE_SAVE_RIGHT &&
-                             clickY > PAUSE_SAVE_TOP && clickY < PAUSE_SAVE_BOTTOM) {
-                        saveGame();
-                             }
-                    return;
-                }
-
-                // --- WIN MODE ---
-                if (gameWon) {
-                    if (clickX > WIN_QUIT_LEFT && clickX < WIN_QUIT_RIGHT &&
-                        clickY > WIN_QUIT_TOP  && clickY < WIN_QUIT_BOTTOM)
+                             clickY > QUIT_TOP  && clickY < QUIT_BOTTOM)
                     {
                         saveGame();
-                        std::cout << "Clicked Quit on win screen. Exiting game...\n";
                         isRunning = false;
+                    }
+                    else if (clickX > LOAD_LEFT && clickX < LOAD_RIGHT &&
+                             clickY > LOAD_TOP  && clickY < LOAD_BOTTOM)
+                    {
+                        loadGame();
                     }
                     return;
                 }
 
-                // --- GAMEPLAY MODE ---
-                if (!inMenu && !isPaused && !gameWon) {
-                    int mouseX = event.button.x + camera.x;
-                    int mouseY = event.button.y + camera.y;
-
-                    auto& playerTransform = player->getComponent<TransformComponent>();
-                    float playerCenterX = playerTransform.position.x + playerTransform.width / 2;
-                    float playerCenterY = playerTransform.position.y + playerTransform.height / 2;
-
-                    float dx = mouseX - playerCenterX;
-                    float dy = mouseY - playerCenterY;
-                    float length = std::sqrt(dx * dx + dy * dy);
-
-                    Vector2D direction = { 0, 0 };
-                    if (length != 0) {
-                        direction.x = dx / length;
-                        direction.y = dy / length;
+                // --- PAUSE ---
+                if (isPaused) {
+                    if (clickX > PAUSE_QUIT_LEFT && clickX < PAUSE_QUIT_RIGHT &&
+                        clickY > PAUSE_QUIT_TOP   && clickY < PAUSE_QUIT_BOTTOM)
+                    {
+                        saveGame();
+                        isRunning = false;
                     }
+                    else if (clickX > PAUSE_SAVE_LEFT && clickX < PAUSE_SAVE_RIGHT &&
+                             clickY > PAUSE_SAVE_TOP   && clickY < PAUSE_SAVE_BOTTOM)
+                    {
+                        saveGame();
+                    }
+                    return;
+                }
 
-                    float spawnOffset = playerTransform.width / 2 + 10;
-                    float bulletStartX = playerCenterX + direction.x * spawnOffset;
-                    float bulletStartY = playerCenterY + direction.y * spawnOffset;
+                // --- WIN & REPLAY ---
+                if (gameWon) {
+                    // debug log
+                    std::cout << "[DEBUG] Win click: (" << clickX << ", " << clickY << ")\n";
 
-                    auto& bullet = manager.addEntity();
-                    bullet.addComponent<TransformComponent>(bulletStartX, bulletStartY, 8, 8, 1);
-                    bullet.addComponent<SpriteComponent>("Assets/Bullet.png");
-                    bullet.addComponent<BulletComponent>(direction, 10.0f, 300.0f);
+                    // Quit button
+                    if (clickX > WIN_QUIT_LEFT && clickX < WIN_QUIT_RIGHT &&
+                        clickY > WIN_QUIT_TOP   && clickY < WIN_QUIT_BOTTOM)
+                    {
+                        saveGame();
+                        isRunning = false;
+                    }
+                    // Replay button
+                    else if (clickX > WIN_REPLAY_LEFT && clickX < WIN_REPLAY_RIGHT &&
+                             clickY > WIN_REPLAY_TOP   && clickY < WIN_REPLAY_BOTTOM)
+                    {
+                        std::cout << "[DEBUG] Replay button hit!\n";
+                        // clear the win state so render() will draw ghosts
+                        gameWon     = false;
+                        // teardown live game
+                        manager     = Manager();
+                        Game::colliders.clear();
+                        // begin replay
+                        isReplaying = true;
+
+                        if (!replayer.begin()) {
+                            std::cerr << "Failed to open replay.csv\n";
+                            isReplaying = false;
+                            return;
+                        }
+
+                        // spawn ghost player
+                        replayPlayer = &manager.addEntity();
+                        replayPlayer->addComponent<TransformComponent>(0,0,40,42,1);
+                        replayPlayer->addComponent<SpriteComponent>("Assets/Clovek.png");
+
+                        // spawn ghost enemies
+                        replayEnemies.clear();
+                        for (int i = 0; i < 20; ++i) {
+                            auto& e = manager.addEntity();
+                            e.addComponent<TransformComponent>(0,0,72,72,1);
+                            e.addComponent<SpriteComponent>("Assets/Nasprotnik.png");
+                            replayEnemies.push_back(&e);
+                        }
+
+                        // spawn ghost pets
+                        replayPets.clear();
+                        for (int i = 0; i < 20; ++i) {
+                            auto& p = manager.addEntity();
+                            p.addComponent<TransformComponent>(0,0,48,48,1);
+                            p.addComponent<SpriteComponent>("Assets/Zival.png");
+                            replayPets.push_back(&p);
+                        }
+                    }
+                    return;
+                }
+
+                // --- GAMEPLAY SHOOTING ---
+                {
+                    int worldX = event.button.x + camera.x;
+                    int worldY = event.button.y + camera.y;
+                    auto& ptx = player->getComponent<TransformComponent>();
+                    float pcx = ptx.position.x + ptx.width*0.5f;
+                    float pcy = ptx.position.y + ptx.height*0.5f;
+                    float dx = worldX - pcx, dy = worldY - pcy;
+                    float len = std::sqrt(dx*dx + dy*dy);
+                    Vector2D dir{0,0};
+                    if (len > 0) { dir.x = dx/len; dir.y = dy/len; }
+
+                    float off = ptx.width/2 + 10;
+                    auto& b = manager.addEntity();
+                    b.addComponent<TransformComponent>(
+                        pcx + dir.x*off,
+                        pcy + dir.y*off,
+                        8,8,1
+                    );
+                    b.addComponent<SpriteComponent>("Assets/Bullet.png");
+                    b.addComponent<BulletComponent>(dir, 10.0f, 300.0f);
                 }
                 break;
             }
 
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    int newWidth = event.window.data1;
-                    int newHeight = event.window.data2;
-                    SDL_RenderSetLogicalSize(renderer, newWidth, newHeight);
-                    camera.w = newWidth;
-                    camera.h = newHeight;
+                    int newW = event.window.data1;
+                    int newH = event.window.data2;
+                    SDL_RenderSetLogicalSize(renderer, newW, newH);
+                    camera.w = newW;
+                    camera.h = newH;
                 }
                 break;
 
@@ -313,87 +362,157 @@ void Game::handleEvents() {
 
 
 
+
+
 void Game::update() {
+    // --- MENU MODE: no updates while in menu ---
     if (inMenu) {
         return;
     }
+
+    // --- REPLAY MODE: playback recorded frames ---
+    if (isReplaying) {
+        FrameData fd;
+        if (!replayer.next(fd)) {
+            // end of replay
+            replayer.end();
+            isReplaying = false;
+            return;
+        }
+
+        // 1) Position ghost player
+        auto& rptx = replayPlayer->getComponent<TransformComponent>();
+        rptx.position = fd.player;
+
+        // 2) Update camera to follow ghost player
+        camera.x = static_cast<int>(rptx.position.x + rptx.width  * 0.5f - camera.w * 0.5f);
+        camera.y = static_cast<int>(rptx.position.y + rptx.height * 0.5f - camera.h * 0.5f);
+
+        // 3) Position (or hide) ghost enemies
+        for (size_t i = 0; i < replayEnemies.size(); ++i) {
+            auto* e = replayEnemies[i];
+            auto& tx = e->getComponent<TransformComponent>();
+            if (i < fd.enemies.size()) {
+                tx.position = fd.enemies[i];
+            } else {
+                tx.position = Vector2D{-1000.0f, -1000.0f};
+            }
+        }
+
+        // 4) Position (or hide) ghost pets
+        for (size_t i = 0; i < replayPets.size(); ++i) {
+            auto* p = replayPets[i];
+            auto& tx = p->getComponent<TransformComponent>();
+            if (i < fd.pets.size()) {
+                tx.position = fd.pets[i];
+            } else {
+                tx.position = Vector2D{-1000.0f, -1000.0f};
+            }
+        }
+
+        // Note: rendering will be handled by render(), which draws manager.draw()
+        return;
+    }
+
+    // --- PAUSE or WIN: skip game logic while paused or after win ---
     if (isPaused || gameWon) {
         return;
     }
-    Uint32 currentTime = SDL_GetTicks();
 
-    // Log mouse position every second
-    if (currentTime - lastMousePositionLogTime > mouseLogInterval) {
-        int mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-
-        // Convert screen coordinates to world coordinates
-        int worldX = mouseX + camera.x;
-        int worldY = mouseY + camera.y;
-
-        std::cout << "Mouse position - Screen: (" << mouseX << ", " << mouseY
-                  << ") World: (" << worldX << ", " << worldY << ")" << std::endl;
-        lastMousePositionLogTime = currentTime;
+    // --- LOG MOUSE POSITION every second (optional) ---
+    Uint32 now = SDL_GetTicks();
+    if (now - lastMousePositionLogTime > mouseLogInterval) {
+        int mx, my;
+        SDL_GetMouseState(&mx, &my);
+        int worldX = mx + camera.x;
+        int worldY = my + camera.y;
+        std::cout << "Mouse — Screen: (" << mx << "," << my
+                  << ") World: (" << worldX << "," << worldY << ")\n";
+        lastMousePositionLogTime = now;
     }
 
-    auto& playerTransform = player->getComponent<TransformComponent>();
-    Vector2D oldPlayerPos = playerTransform.position;
+    // --- CORE GAME UPDATE ---
+    // 1) Save old player pos for collision resolution
+    auto& ptx = player->getComponent<TransformComponent>();
+    Vector2D oldPos = ptx.position;
 
+    // 2) Refresh & update all entities
     manager.refresh();
     manager.update();
 
-    camera.x = static_cast<int>(playerTransform.position.x + playerTransform.width / 2 - camera.w / 2);
-    camera.y = static_cast<int>(playerTransform.position.y + playerTransform.height / 2 - camera.h / 2);
+    // 3) Recenter camera on player
+    camera.x = static_cast<int>(ptx.position.x + ptx.width  * 0.5f - camera.w * 0.5f);
+    camera.y = static_cast<int>(ptx.position.y + ptx.height * 0.5f - camera.h * 0.5f);
 
-    handleCollisions(oldPlayerPos);
+    // 4) Handle wall collisions
+    handleCollisions(oldPos);
 
-    auto& playerCollider = player->getComponent<ColliderComponent>();
-
-    // Pet collisions
+    // 5) Collect pets
+    auto& playerCol = player->getComponent<ColliderComponent>();
     for (auto& col : colliders) {
-        if (col->tag == "pet" && col->entity->isActive()) {
-            if (Collision::AABB(playerCollider, *col)) {
-                petCount++;
-                std::cout << "Pet collected! Total pets: " << petCount << std::endl;
-                col->entity->destroy();
-            }
+        if (col->tag == "pet" && col->entity->isActive() &&
+            Collision::AABB(playerCol, *col))
+        {
+            petCount++;
+            std::cout << "Pet collected! Total: " << petCount << "\n";
+            col->entity->destroy();
         }
     }
 
-    // Enemy collisions
-    bool collidedWithEnemy = false;
+    // 6) Handle enemy collisions / health
+    bool hit = false;
     for (auto& col : colliders) {
-        if (col->tag == "enemy" && col->entity->isActive()) {
-            if (Collision::AABB(playerCollider, *col)) {
-                collidedWithEnemy = true;
-                break;
-            }
+        if (col->tag == "enemy" && col->entity->isActive() &&
+            Collision::AABB(playerCol, *col))
+        {
+            hit = true;
+            break;
         }
     }
-    if (collidedWithEnemy && (currentTime - lastHitTime >= 1000)) {
+    if (hit && (now - lastHitTime >= 1000)) {
         heartCount--;
-        lastHitTime = currentTime;
+        lastHitTime = now;
         if (heartCount <= 0) {
             isRunning = false;
         }
     }
 
-    int tileX = static_cast<int>(playerTransform.position.x + playerTransform.width / 2) / 32;
-    int tileY = static_cast<int>(playerTransform.position.y + playerTransform.height / 2) / 32;
-
-    if (tileX >= 0 && tileX < 230 && tileY >= 0 && tileY < 230) {
-        if (map->getTile(tileY, tileX) == 4 && petCount > 0) {
-            storedPets += petCount;
-            std::cout << "Stored " << petCount << " pets in the shelter!" << std::endl;
-            std::cout << "Total stored pets: " << storedPets << std::endl;
-            petCount = 0;
-        }
+    // 7) Shelter deposit & win check
+    int tx = static_cast<int>(ptx.position.x + ptx.width  * 0.5f) / 32;
+    int ty = static_cast<int>(ptx.position.y + ptx.height * 0.5f) / 32;
+    if (tx >= 0 && tx < 230 && ty >= 0 && ty < 230 &&
+        map->getTile(ty, tx) == 4 && petCount > 0)
+    {
+        storedPets += petCount;
+        std::cout << "Stored " << petCount
+                  << " pets! Total stored: " << storedPets << "\n";
+        petCount = 0;
     }
     if (storedPets >= 8 && !gameWon) {
         gameWon = true;
-        std::cout << "🎉 You won the game! 🎉" << std::endl;
+        std::cout << "🎉 You won the game! 🎉\n";
     }
+
+    // --- RECORD THIS FRAME FOR REPLAY ---
+    FrameData fd;
+    fd.player = ptx.position;
+    for (auto& col : colliders) {
+        if (col->tag == "enemy" && col->entity->isActive()) {
+            fd.enemies.push_back(
+                col->entity->getComponent<TransformComponent>().position
+            );
+        }
+        if (col->tag == "pet" && col->entity->isActive()) {
+            fd.pets.push_back(
+                col->entity->getComponent<TransformComponent>().position
+            );
+        }
+    }
+    recorder.recordFrame(fd);
 }
+
+
+
 
 
 
@@ -440,32 +559,52 @@ void Game::handleCollisions(Vector2D oldPlayerPos) {
 }
 
 void Game::render() {
+    // 1) Clear the back buffer
     SDL_RenderClear(renderer);
-    if (gameWon) {
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, winTexture, NULL, NULL);
+
+    // 2) REPLAY MODE: draw the map, update sprites, then draw ghosts
+    if (isReplaying) {
+        if (map) {
+            map->DrawMap();
+        }
+        // run the per‐frame update on each component (so SpriteComponent sets destRect)
+        manager.update();
+        // now draw your ghost entities
+        manager.draw();
         SDL_RenderPresent(renderer);
         return;
     }
-    if (inMenu) {
-        // Render menu background
-        SDL_RenderCopy(renderer, menuTexture, NULL, NULL);
 
-        // Render mouse position on screen (optional)
-        if (showMousePosition) {
-            std::string mousePosText = "Mouse: " + std::to_string(mouseX) + ", " + std::to_string(mouseY);
-            // You'll need SDL_ttf for text rendering or use a simpler method
+    // 3) WIN SCREEN
+    if (gameWon) {
+        SDL_RenderCopy(renderer, winTexture, nullptr, nullptr);
+        SDL_RenderPresent(renderer);
+        return;
+    }
+
+    // 4) MAIN MENU
+    if (inMenu) {
+        SDL_RenderCopy(renderer, menuTexture, nullptr, nullptr);
+    }
+    else {
+        // 5) NORMAL GAMEPLAY
+        if (map) {
+            map->DrawMap();
         }
-    } else {
-        // Render game
-        map->DrawMap();
         manager.draw();
     }
+
+    // 6) PAUSE OVERLAY
     if (isPaused) {
-        SDL_RenderCopy(renderer, pauseTexture, NULL, NULL);
+        SDL_RenderCopy(renderer, pauseTexture, nullptr, nullptr);
     }
+
+    // 7) Present the frame
     SDL_RenderPresent(renderer);
 }
+
+
+
 
 void Game::saveGame() {
     std::ofstream saveFile("savegame.txt");
@@ -550,6 +689,7 @@ void Game::loadGame() {
 
 // Modify the clean function to clean up menu resources
 void Game::clean() {
+    recorder.end();
     if (menuTexture) {
         SDL_DestroyTexture(menuTexture);
     }

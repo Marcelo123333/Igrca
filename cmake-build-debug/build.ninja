@@ -119,6 +119,20 @@ build CMakeFiles/Igrica.dir/ESC/EnemyAIComponent.cpp.obj: CXX_COMPILER__Igrica_u
   OBJECT_DIR = CMakeFiles\Igrica.dir
   OBJECT_FILE_DIR = CMakeFiles\Igrica.dir\ESC
 
+build CMakeFiles/Igrica.dir/Recorder.cpp.obj: CXX_COMPILER__Igrica_unscanned_Debug C$:/Users/HELP404/CLionProjects/Igrica/Recorder.cpp || cmake_object_order_depends_target_Igrica
+  DEP_FILE = CMakeFiles\Igrica.dir\Recorder.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/include/SDL2
+  OBJECT_DIR = CMakeFiles\Igrica.dir
+  OBJECT_FILE_DIR = CMakeFiles\Igrica.dir
+
+build CMakeFiles/Igrica.dir/Replayer.cpp.obj: CXX_COMPILER__Igrica_unscanned_Debug C$:/Users/HELP404/CLionProjects/Igrica/Replayer.cpp || cmake_object_order_depends_target_Igrica
+  DEP_FILE = CMakeFiles\Igrica.dir\Replayer.cpp.obj.d
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -IC:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/include/SDL2
+  OBJECT_DIR = CMakeFiles\Igrica.dir
+  OBJECT_FILE_DIR = CMakeFiles\Igrica.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target Igrica
@@ -127,7 +141,7 @@ build CMakeFiles/Igrica.dir/ESC/EnemyAIComponent.cpp.obj: CXX_COMPILER__Igrica_u
 #############################################
 # Link the executable Igrica.exe
 
-build Igrica.exe: CXX_EXECUTABLE_LINKER__Igrica_Debug CMakeFiles/Igrica.dir/main.cpp.obj CMakeFiles/Igrica.dir/Game.cpp.obj CMakeFiles/Igrica.dir/TextureManager.cpp.obj CMakeFiles/Igrica.dir/GameObject.cpp.obj CMakeFiles/Igrica.dir/Map.cpp.obj CMakeFiles/Igrica.dir/Vector2D.cpp.obj CMakeFiles/Igrica.dir/Collision.cpp.obj CMakeFiles/Igrica.dir/ESC/ColliderComponent.cpp.obj CMakeFiles/Igrica.dir/ESC/SpriteComponent.cpp.obj CMakeFiles/Igrica.dir/ESC/EnemyAIComponent.cpp.obj | C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2main.a C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2.dll.a C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2_image.dll.a
+build Igrica.exe: CXX_EXECUTABLE_LINKER__Igrica_Debug CMakeFiles/Igrica.dir/main.cpp.obj CMakeFiles/Igrica.dir/Game.cpp.obj CMakeFiles/Igrica.dir/TextureManager.cpp.obj CMakeFiles/Igrica.dir/GameObject.cpp.obj CMakeFiles/Igrica.dir/Map.cpp.obj CMakeFiles/Igrica.dir/Vector2D.cpp.obj CMakeFiles/Igrica.dir/Collision.cpp.obj CMakeFiles/Igrica.dir/ESC/ColliderComponent.cpp.obj CMakeFiles/Igrica.dir/ESC/SpriteComponent.cpp.obj CMakeFiles/Igrica.dir/ESC/EnemyAIComponent.cpp.obj CMakeFiles/Igrica.dir/Recorder.cpp.obj CMakeFiles/Igrica.dir/Replayer.cpp.obj | C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2main.a C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2.dll.a C$:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2_image.dll.a
   FLAGS = -g
   LINK_LIBRARIES = -lmingw32  -mwindows  C:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2main.a  C:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2.dll.a  C:/Users/HELP404/.vcpkg-clion/vcpkg/installed/x64-mingw-dynamic/lib/libSDL2_image.dll.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\Igrica.dir

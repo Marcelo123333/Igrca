@@ -1,6 +1,9 @@
 #pragma once
 #include <SDL.h>
 #include <vector>
+#include "Recorder.h"
+#include "Replayer.h"
+#include "ESC/ECS.h"
 // forward declarations:
 class ColliderComponent;
 class Map;
@@ -53,7 +56,11 @@ private:
 
     SDL_Window* window;
     Map* map;
-
+    Recorder recorder{ "replay.csv" };
+    Replayer replayer{ "replay.csv" };
+    bool isReplaying = false;
+    std::vector<Entity*> replayEnemies, replayPets;
+    Entity* replayPlayer = nullptr;
     int playerStartX = 200;
     int playerStartY = 200;
 

@@ -35,6 +35,10 @@ add_executable(Igrica main.cpp Game.cpp Game.h
         BulletComponent.h
         ESC/EnemyAIComponent.h
         ESC/EnemyAIComponent.cpp
+        Recorder.h
+        Recorder.cpp
+        Replayer.h
+        Replayer.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARY} ${SDL2_IMAGE_LIBRARIES})
