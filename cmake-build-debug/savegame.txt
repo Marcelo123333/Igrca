@@ -1,0 +1,11 @@
+petCount 3
+storedPets 0
+heartCount 1
+playerX 6290
+playerY 1075
+enemy 5756.09 5643.36
+enemy 6318.46 4727.13
+enemy 5995.05 4503.29
+enemy 3795.46 4091.76
+enemy 1410.45 4660.88
+enemy 1556.27 4607.32

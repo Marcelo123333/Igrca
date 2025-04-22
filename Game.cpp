@@ -107,7 +107,7 @@ void Game::initializeGame() {
     // Spawn the player using the stored start coordinates.
     // If no mouse click occurs, these will remain at the default values (200, 200)
     player = &manager.addEntity();
-    player->addComponent<TransformComponent>(playerStartX, playerStartY, 40, 43, 1);
+    player->addComponent<TransformComponent>(playerStartX, playerStartY, 40, 42, 1);
     player->addComponent<SpriteComponent>("Assets/Clovek.png");
     player->addComponent<KeyboardController>();
     player->addComponent<ColliderComponent>("player");

@@ -23,6 +23,7 @@ private:
     SDL_Texture* trava;
     SDL_Texture* wood;
     SDL_Texture* shelter;
+    SDL_Texture* trava2;
 
     int map[230][230];
 };

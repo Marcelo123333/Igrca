@@ -16,7 +16,7 @@ public:
     // The moment the last boost ended or was triggered, used to enforce a cooldown
     Uint32 lastBoostTime = 0;
     // Boost parameters in milliseconds:
-    const Uint32 boostDuration = 500;      // Boost lasts 0.5 sec (500 ms)
+    const Uint32 boostDuration = 300;      // Boost lasts 0.5 sec (500 ms)
     const Uint32 boostDelay = 3000;          // Cooldown period of 5 sec (5000 ms)
 
     void init() override {
@@ -31,13 +31,13 @@ public:
         transform->velocity.y = 0;
 
         // Basic movement keys.
-        if (keystates[SDL_SCANCODE_UP])
+        if (keystates[SDL_SCANCODE_W])
             transform->velocity.y = -1;
-        if (keystates[SDL_SCANCODE_LEFT])
+        if (keystates[SDL_SCANCODE_A])
             transform->velocity.x = -1;
-        if (keystates[SDL_SCANCODE_DOWN])
+        if (keystates[SDL_SCANCODE_S])
             transform->velocity.y = 1;
-        if (keystates[SDL_SCANCODE_RIGHT])
+        if (keystates[SDL_SCANCODE_D])
             transform->velocity.x = 1;
 
         // Get the current time.
@@ -45,7 +45,7 @@ public:
 
         // If D is pressed, boost is not active, and enough time has passed since last boost,
         // trigger the boost.
-        if (keystates[SDL_SCANCODE_D] && !boostActive &&
+        if (keystates[SDL_SCANCODE_C] && !boostActive &&
             (currentTime - lastBoostTime >= boostDelay)) {
             boostActive = true;
             boostStartTime = currentTime;

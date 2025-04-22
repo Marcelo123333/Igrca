@@ -13,6 +13,7 @@ Map::Map() {
     trava = TextureManager::LoadTexture("Assets/Trava.png");
     wood = TextureManager::LoadTexture("Assets/Wood.png");
     shelter = TextureManager::LoadTexture("Assets/Shelter.png");
+    trava2 = TextureManager::LoadTexture("Assets/Trava2.png");
 
     // Load the map from the text file instead of a hardcoded array
     LoadMap();
@@ -29,6 +30,7 @@ Map::~Map() {
     SDL_DestroyTexture(zid);
     SDL_DestroyTexture(wood);
     SDL_DestroyTexture(shelter);
+    SDL_DestroyTexture(trava2);
 }
 
 void Map::LoadMap() {
@@ -81,6 +83,9 @@ void Map::DrawMap() {
                 break;
                 case 4:
                     TextureManager::Draw(shelter, src, dest);
+                break;
+                case 5:
+                    TextureManager::Draw(trava2, src, dest);
                 break;
                 default:
                     break;
