@@ -20,20 +20,19 @@
 #include "Collision.h"         // Include collision header
 #include <fstream>
 
-// Undefine any conflicting macros.
+
 #ifdef byte
 #undef byte
 #endif
 
-// Global instances used by Game.cpp:
 Manager manager;
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 std::vector<ColliderComponent*> Game::colliders;
 SDL_Rect Game::camera = { 0, 0, 800, 640 };
-// Global player pointer (declared as extern in your EnemyAIComponent.h or Globals.h)
 Entity* player = nullptr;
 bool Game::inMenu = true;
+
 SDL_Texture* Game::menuTexture = nullptr;
 SDL_Texture* Game::winTexture = nullptr;
 SDL_Texture* Game::pauseTexture = nullptr;
@@ -43,22 +42,22 @@ Game::~Game() { }
 
 void spawnEnemy(Manager& manager, float x, float y) {
     auto& enemy = manager.addEntity();
-    // Set enemy transform size (visual/collision dimensions) and assign a slower speed.
-    enemy.addComponent<TransformComponent>(x, y, 72, 72, 1); // speed is 1 (instead of 5)
+    // DODAS ENEMIJU TRANSFORM VELIKOST IN HITROST
+    enemy.addComponent<TransformComponent>(x, y, 72, 72, 1); // HITROST JE 1
     enemy.addComponent<SpriteComponent>("Assets/Nasprotnik.png");
     enemy.addComponent<ColliderComponent>("enemy");
-    // Use a follow speed such as 0.05f or 0.1f; adjust until it feels right.
+    // TUKAJ SPREMENIS FOLLOW SPEED ZA ENEMY
     enemy.addComponent<EnemyAIComponent>(320.0f, 0.5f);
 }
 
-// Helper function to spawn a pet at static coordinates.
+// POMOŽNA FUNKCIJA ZA PET SPAWN
 void spawnPet(Manager& manager, float x, float y) {
     auto& pet = manager.addEntity();
-    // Set the pet's transform: adjust size as needed (here 32x32 pixels)
+    // DOLOČIŠ SIZE 48X48
     pet.addComponent<TransformComponent>(x, y, 48, 48, 1);
-    // Add a sprite for the pet (ensure "Assets/Pet.png" exists)
+    // DODAS SPRITE ZA PET
     pet.addComponent<SpriteComponent>("Assets/Zival.png");
-    // Add a collider with the tag "pet" so that collisions can be detected
+    // DODAJ COLLIDER Z TAGOM PET
     pet.addComponent<ColliderComponent>("pet");
 }
 void Game::init(const char* title, int width, int height, bool fullscreen) {
@@ -93,27 +92,27 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     if (!pauseTexture) {
         std::cout << "Failed to load pause screen texture!" << std::endl;
     }
-    // Initialize game state
+    // GAME STATE
     inMenu = true;
 }
 
 
 void Game::initializeGame() {
     recorder.begin();
-    // Create your map and wall colliders.
+    // Naredis mapo in colliderje
     map = new Map();
     map->LoadMap();
     map->CreateWallColliders(manager);
 
-    // Spawn the player using the stored start coordinates.
-    // If no mouse click occurs, these will remain at the default values (200, 200)
+    // Spawn playerja
+    // Ce ni klika bo osalo na 200 200
     player = &manager.addEntity();
     player->addComponent<TransformComponent>(playerStartX, playerStartY, 40, 42, 1);
     player->addComponent<SpriteComponent>("Assets/Clovek.png");
     player->addComponent<KeyboardController>();
     player->addComponent<ColliderComponent>("player");
 
-    // Spawn enemies.
+
     spawnEnemy(manager, 5775.0f, 5645.0f);
     spawnEnemy(manager, 6117.0f, 5319.0f);
     spawnEnemy(manager, 5992.0f, 4749.0f);
@@ -132,7 +131,7 @@ void Game::initializeGame() {
     spawnEnemy(manager, 1473.0f, 3615.0f);
     spawnEnemy(manager, 1600.0f, 3730.0f);
 
-    // Initialize game stats.
+
     petCount = 0;
     heartCount = 3;
     lastHitTime = 0;
@@ -181,7 +180,7 @@ const int LOAD_RIGHT  = 563;
 const int LOAD_TOP    = 328;
 const int LOAD_BOTTOM = 425;
 
-const int WIN_REPLAY_LEFT   = 234;  // adjust as needed
+const int WIN_REPLAY_LEFT   = 234;
 const int WIN_REPLAY_RIGHT  = 569;
 const int WIN_REPLAY_TOP    = 205;
 const int WIN_REPLAY_BOTTOM = 318;
@@ -341,7 +340,7 @@ void Game::handleEvents() {
                         8,8,1
                     );
                     b.addComponent<SpriteComponent>("Assets/Bullet.png");
-                    b.addComponent<BulletComponent>(dir, 10.0f, 300.0f);
+                    b.addComponent<BulletComponent>(dir, 20.0f, 300.0f);
                 }
                 break;
             }
@@ -361,10 +360,6 @@ void Game::handleEvents() {
         }
     }
 }
-
-
-
-
 
 
 

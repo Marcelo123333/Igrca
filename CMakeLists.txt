@@ -30,8 +30,6 @@ add_executable(Igrica main.cpp Game.cpp Game.h
         Collision.h
         Collision.cpp
         ESC/TileComponent.h
-        ESC/ColliderComponent.cpp
-        ESC/SpriteComponent.cpp
         BulletComponent.h
         ESC/EnemyAIComponent.h
         ESC/EnemyAIComponent.cpp

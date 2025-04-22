@@ -23,10 +23,10 @@ public:
     }
 
     void update() override {
-        // Make sure we have a valid transform pointer
+        // POGLEDAS CE IMAMO SPLOH TRANSFORM COMPONENT
         if (!transform) return;
 
-        // Get the base position and size from the transform
+        // DOBIS POZICIJO IN VELIKOST ZA TRANSFORM COMPONENT
         int baseX = static_cast<int>(transform->position.x);
         int baseY = static_cast<int>(transform->position.y);
         int baseW = transform->width * transform->scale;
