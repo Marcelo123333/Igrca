@@ -263,27 +263,21 @@ void Game::handleEvents() {
 
                 // --- WIN & REPLAY ---
                 if (gameWon) {
-                    // debug log
                     std::cout << "[DEBUG] Win click: (" << clickX << ", " << clickY << ")\n";
 
-                    // Quit button
                     if (clickX > WIN_QUIT_LEFT && clickX < WIN_QUIT_RIGHT &&
                         clickY > WIN_QUIT_TOP   && clickY < WIN_QUIT_BOTTOM)
                     {
                         saveGame();
                         isRunning = false;
                     }
-                    // Replay button
                     else if (clickX > WIN_REPLAY_LEFT && clickX < WIN_REPLAY_RIGHT &&
                              clickY > WIN_REPLAY_TOP   && clickY < WIN_REPLAY_BOTTOM)
                     {
                         std::cout << "[DEBUG] Replay button hit!\n";
-                        // clear the win state so render() will draw ghosts
                         gameWon     = false;
-                        // teardown live game
                         manager     = Manager();
                         Game::colliders.clear();
-                        // begin replay
                         isReplaying = true;
 
                         if (!replayer.begin()) {
@@ -292,12 +286,12 @@ void Game::handleEvents() {
                             return;
                         }
 
-                        // spawn ghost player
+                        // ghost player
                         replayPlayer = &manager.addEntity();
                         replayPlayer->addComponent<TransformComponent>(0,0,40,42,1);
                         replayPlayer->addComponent<SpriteComponent>("Assets/Clovek.png");
 
-                        // spawn ghost enemies
+                        // ghost enemies
                         replayEnemies.clear();
                         for (int i = 0; i < 20; ++i) {
                             auto& e = manager.addEntity();
@@ -306,13 +300,22 @@ void Game::handleEvents() {
                             replayEnemies.push_back(&e);
                         }
 
-                        // spawn ghost pets
+                        // ghost pets
                         replayPets.clear();
                         for (int i = 0; i < 20; ++i) {
                             auto& p = manager.addEntity();
                             p.addComponent<TransformComponent>(0,0,48,48,1);
                             p.addComponent<SpriteComponent>("Assets/Zival.png");
                             replayPets.push_back(&p);
+                        }
+
+                        // ghost bullets
+                        replayBullets.clear();
+                        for (int i = 0; i < 50; ++i) {
+                            auto& b = manager.addEntity();
+                            b.addComponent<TransformComponent>(0,0,8,8,1);
+                            b.addComponent<SpriteComponent>("Assets/Bullet.png");
+                            replayBullets.push_back(&b);
                         }
                     }
                     return;
@@ -364,152 +367,107 @@ void Game::handleEvents() {
 
 
 
-void Game::update() {
-    // --- MENU MODE: no updates while in menu ---
-    if (inMenu) {
-        return;
-    }
 
-    // --- REPLAY MODE: playback recorded frames ---
+void Game::update() {
+    if (inMenu) return;
+
     if (isReplaying) {
         FrameData fd;
         if (!replayer.next(fd)) {
-            // end of replay
             replayer.end();
             isReplaying = false;
             return;
         }
 
-        // 1) Position ghost player
         auto& rptx = replayPlayer->getComponent<TransformComponent>();
         rptx.position = fd.player;
+        camera.x = int(rptx.position.x + rptx.width*0.5f - camera.w*0.5f);
+        camera.y = int(rptx.position.y + rptx.height*0.5f - camera.h*0.5f);
 
-        // 2) Update camera to follow ghost player
-        camera.x = static_cast<int>(rptx.position.x + rptx.width  * 0.5f - camera.w * 0.5f);
-        camera.y = static_cast<int>(rptx.position.y + rptx.height * 0.5f - camera.h * 0.5f);
-
-        // 3) Position (or hide) ghost enemies
         for (size_t i = 0; i < replayEnemies.size(); ++i) {
             auto* e = replayEnemies[i];
             auto& tx = e->getComponent<TransformComponent>();
-            if (i < fd.enemies.size()) {
-                tx.position = fd.enemies[i];
-            } else {
-                tx.position = Vector2D{-1000.0f, -1000.0f};
-            }
+            if (i < fd.enemies.size()) tx.position = fd.enemies[i];
+            else                        tx.position = Vector2D{-1000,-1000};
         }
-
-        // 4) Position (or hide) ghost pets
         for (size_t i = 0; i < replayPets.size(); ++i) {
             auto* p = replayPets[i];
             auto& tx = p->getComponent<TransformComponent>();
-            if (i < fd.pets.size()) {
-                tx.position = fd.pets[i];
-            } else {
-                tx.position = Vector2D{-1000.0f, -1000.0f};
-            }
+            if (i < fd.pets.size()) tx.position = fd.pets[i];
+            else                     tx.position = Vector2D{-1000,-1000};
+        }
+        for (size_t i = 0; i < replayBullets.size(); ++i) {
+            auto* b = replayBullets[i];
+            auto& tx = b->getComponent<TransformComponent>();
+            if (i < fd.bullets.size()) tx.position = fd.bullets[i];
+            else                        tx.position = Vector2D{-1000,-1000};
         }
 
-        // Note: rendering will be handled by render(), which draws manager.draw()
         return;
     }
 
-    // --- PAUSE or WIN: skip game logic while paused or after win ---
-    if (isPaused || gameWon) {
-        return;
-    }
 
-    // --- LOG MOUSE POSITION every second (optional) ---
+    if (isPaused || gameWon) return;
+
     Uint32 now = SDL_GetTicks();
     if (now - lastMousePositionLogTime > mouseLogInterval) {
-        int mx, my;
-        SDL_GetMouseState(&mx, &my);
-        int worldX = mx + camera.x;
-        int worldY = my + camera.y;
-        std::cout << "Mouse — Screen: (" << mx << "," << my
-                  << ") World: (" << worldX << "," << worldY << ")\n";
+        int mx, my; SDL_GetMouseState(&mx, &my);
         lastMousePositionLogTime = now;
     }
 
-    // --- CORE GAME UPDATE ---
-    // 1) Save old player pos for collision resolution
     auto& ptx = player->getComponent<TransformComponent>();
     Vector2D oldPos = ptx.position;
 
-    // 2) Refresh & update all entities
     manager.refresh();
     manager.update();
 
-    // 3) Recenter camera on player
-    camera.x = static_cast<int>(ptx.position.x + ptx.width  * 0.5f - camera.w * 0.5f);
-    camera.y = static_cast<int>(ptx.position.y + ptx.height * 0.5f - camera.h * 0.5f);
+    camera.x = int(ptx.position.x + ptx.width*0.5f - camera.w*0.5f);
+    camera.y = int(ptx.position.y + ptx.height*0.5f - camera.h*0.5f);
 
-    // 4) Handle wall collisions
     handleCollisions(oldPos);
 
-    // 5) Collect pets
-    auto& playerCol = player->getComponent<ColliderComponent>();
-    for (auto& col : colliders) {
-        if (col->tag == "pet" && col->entity->isActive() &&
-            Collision::AABB(playerCol, *col))
-        {
+    auto& pcol = player->getComponent<ColliderComponent>();
+    for (auto& c : colliders) {
+        if (c->tag=="pet" && c->entity->isActive() &&
+            Collision::AABB(pcol,*c)) {
             petCount++;
-            std::cout << "Pet collected! Total: " << petCount << "\n";
-            col->entity->destroy();
+            c->entity->destroy();
         }
     }
 
-    // 6) Handle enemy collisions / health
-    bool hit = false;
-    for (auto& col : colliders) {
-        if (col->tag == "enemy" && col->entity->isActive() &&
-            Collision::AABB(playerCol, *col))
-        {
-            hit = true;
-            break;
-        }
+    bool hit=false;
+    for (auto& c:colliders) {
+        if (c->tag=="enemy" && c->entity->isActive() &&
+            Collision::AABB(pcol,*c)) { hit=true; break; }
     }
-    if (hit && (now - lastHitTime >= 1000)) {
-        heartCount--;
-        lastHitTime = now;
-        if (heartCount <= 0) {
-            isRunning = false;
-        }
+    if (hit && now - lastHitTime>=1000) {
+        heartCount--; lastHitTime=now;
+        if (heartCount<=0) isRunning=false;
     }
 
-    // 7) Shelter deposit & win check
-    int tx = static_cast<int>(ptx.position.x + ptx.width  * 0.5f) / 32;
-    int ty = static_cast<int>(ptx.position.y + ptx.height * 0.5f) / 32;
-    if (tx >= 0 && tx < 230 && ty >= 0 && ty < 230 &&
-        map->getTile(ty, tx) == 4 && petCount > 0)
+    int tx = int(ptx.position.x + ptx.width*0.5f)/32;
+    int ty = int(ptx.position.y + ptx.height*0.5f)/32;
+    if (tx>=0 && tx<230 && ty>=0 && ty<230 &&
+        map->getTile(ty,tx)==4 && petCount>0)
     {
-        storedPets += petCount;
-        std::cout << "Stored " << petCount
-                  << " pets! Total stored: " << storedPets << "\n";
-        petCount = 0;
-    }
-    if (storedPets >= 8 && !gameWon) {
-        gameWon = true;
-        std::cout << "🎉 You won the game! 🎉\n";
+        storedPets+=petCount;
+        petCount=0;
+        if (storedPets>=8) gameWon=true;
     }
 
-    // --- RECORD THIS FRAME FOR REPLAY ---
     FrameData fd;
     fd.player = ptx.position;
-    for (auto& col : colliders) {
-        if (col->tag == "enemy" && col->entity->isActive()) {
-            fd.enemies.push_back(
-                col->entity->getComponent<TransformComponent>().position
-            );
-        }
-        if (col->tag == "pet" && col->entity->isActive()) {
-            fd.pets.push_back(
-                col->entity->getComponent<TransformComponent>().position
-            );
-        }
+    for (auto& c:colliders) {
+        if (c->tag=="enemy" && c->entity->isActive())
+            fd.enemies.push_back(c->entity->getComponent<TransformComponent>().position);
+        if (c->tag=="pet" && c->entity->isActive())
+            fd.pets.push_back(c->entity->getComponent<TransformComponent>().position);
+        if (c->tag=="bullet" && c->entity->isActive())
+            fd.bullets.push_back(c->entity->getComponent<TransformComponent>().position);
     }
     recorder.recordFrame(fd);
 }
+
 
 
 

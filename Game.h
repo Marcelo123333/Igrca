@@ -59,7 +59,7 @@ private:
     Recorder recorder{ "replay.csv" };
     Replayer replayer{ "replay.csv" };
     bool isReplaying = false;
-    std::vector<Entity*> replayEnemies, replayPets;
+    std::vector<Entity*> replayEnemies, replayPets, replayBullets;
     Entity* replayPlayer = nullptr;
     int playerStartX = 200;
     int playerStartY = 200;
