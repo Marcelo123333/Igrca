@@ -1,1 +1,1 @@
-# Igrca" 
+# Cilj igre je da najades v 3. laboratorijih vse zivali na katerih proizvajajo poskuse in jih spravis v shelter ki je na vrhu mape. Ko spravis vse zivali v shelter zmagas. Imas 3 zivljenja, ki ti jih probajo zbiti znanstveniki. Če se jih dotaknes ti 1 zivljenje zbijejo dol. Zato jih lahko ustrelis. Ce kliknes gumb C dodgas. SRECNO :)

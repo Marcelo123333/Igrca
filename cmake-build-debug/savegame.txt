@@ -1,5 +1,5 @@
 petCount 0
 storedPets 8
 heartCount 3
-playerX -1000
-playerY -1000
+playerX 3180
+playerY 535

@@ -10,15 +10,15 @@ struct FrameData {
     std::vector<Vector2D> bullets;
 };
 
-// Simple CSV‐style recorder
+
 class Recorder {
 public:
     Recorder(const std::string& filename);
     ~Recorder();
 
-    void begin();                      // open file for writing
+    void begin();
     void recordFrame(const FrameData& frame);
-    void end();                        // close file
+    void end();
 
 private:
     std::ofstream out;

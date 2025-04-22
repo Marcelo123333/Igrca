@@ -206,7 +206,7 @@ void Game::handleEvents() {
 
             case SDL_KEYDOWN:
                 if (inMenu && event.key.keysym.sym == SDLK_SPACE) {
-                    // ignore
+                    // IGNORIRAS
                 }
                 else if (!inMenu && !gameWon && event.key.keysym.sym == SDLK_ESCAPE) {
                     isPaused = !isPaused;
@@ -222,7 +222,7 @@ void Game::handleEvents() {
                 int clickX = static_cast<int>(event.button.x * scaleX);
                 int clickY = static_cast<int>(event.button.y * scaleY);
 
-                // --- MENU ---
+                // MENU
                 if (inMenu) {
                     if (clickX > START_LEFT && clickX < START_RIGHT &&
                         clickY > START_TOP  && clickY < START_BOTTOM)
@@ -244,7 +244,7 @@ void Game::handleEvents() {
                     return;
                 }
 
-                // --- PAUSE ---
+                // PAUZA
                 if (isPaused) {
                     if (clickX > PAUSE_QUIT_LEFT && clickX < PAUSE_QUIT_RIGHT &&
                         clickY > PAUSE_QUIT_TOP   && clickY < PAUSE_QUIT_BOTTOM)
@@ -260,7 +260,7 @@ void Game::handleEvents() {
                     return;
                 }
 
-                // --- WIN & REPLAY ---
+                // WIN/REPLAY
                 if (gameWon) {
                     std::cout << "[DEBUG] Win click: (" << clickX << ", " << clickY << ")\n";
 
@@ -285,12 +285,12 @@ void Game::handleEvents() {
                             return;
                         }
 
-                        // ghost player
+                        // REPLAY PLAYER
                         replayPlayer = &manager.addEntity();
                         replayPlayer->addComponent<TransformComponent>(0,0,40,42,1);
                         replayPlayer->addComponent<SpriteComponent>("Assets/Clovek.png");
 
-                        // ghost enemies
+                        // REPLAY ENEMY
                         replayEnemies.clear();
                         for (int i = 0; i < 20; ++i) {
                             auto& e = manager.addEntity();
@@ -299,7 +299,7 @@ void Game::handleEvents() {
                             replayEnemies.push_back(&e);
                         }
 
-                        // ghost pets
+                        // REPLAY PET
                         replayPets.clear();
                         for (int i = 0; i < 20; ++i) {
                             auto& p = manager.addEntity();
@@ -308,7 +308,7 @@ void Game::handleEvents() {
                             replayPets.push_back(&p);
                         }
 
-                        // ghost bullets
+                        // REPLAY BULLET
                         replayBullets.clear();
                         for (int i = 0; i < 50; ++i) {
                             auto& b = manager.addEntity();
@@ -320,7 +320,7 @@ void Game::handleEvents() {
                     return;
                 }
 
-                // --- GAMEPLAY SHOOTING ---
+                // GAME SHOOTING
                 {
                     int worldX = event.button.x + camera.x;
                     int worldY = event.button.y + camera.y;
@@ -373,6 +373,7 @@ void Game::update() {
             isReplaying = false;
             return;
         }
+
 
         auto& rptx = replayPlayer->getComponent<TransformComponent>();
         rptx.position = fd.player;
@@ -481,7 +482,7 @@ void Game::handleCollisions(Vector2D oldPlayerPos) {
     for (auto& cc : colliders) {
         if (cc->tag == "wall" && cc != &playerCol) {
             if (Collision::AABB(playerCol, *cc)) {
-                // Test X-axis collision.
+
                 Vector2D testPos = playerTransform.position;
                 testPos.x = oldPlayerPos.x;
 
@@ -512,42 +513,42 @@ void Game::handleCollisions(Vector2D oldPlayerPos) {
 }
 
 void Game::render() {
-    // 1) Clear the back buffer
+
     SDL_RenderClear(renderer);
 
-    // 2) REPLAY MODE: draw the map, update sprites, then draw ghosts
+
     if (isReplaying) {
         if (map) {
             map->DrawMap();
         }
-        // run the per‐frame update on each component (so SpriteComponent sets destRect)
+        // PER FRAME UPDATE ZA VSE
         manager.update();
-        // now draw your ghost entities
+        // NARISES REPLAY COMPONENTE
         manager.draw();
         SDL_RenderPresent(renderer);
         return;
     }
 
-    // 3) WIN SCREEN
+
     if (gameWon) {
         SDL_RenderCopy(renderer, winTexture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
         return;
     }
 
-    // 4) MAIN MENU
+
     if (inMenu) {
         SDL_RenderCopy(renderer, menuTexture, nullptr, nullptr);
     }
     else {
-        // 5) NORMAL GAMEPLAY
+
         if (map) {
             map->DrawMap();
         }
         manager.draw();
     }
 
-    // 6) PAUSE OVERLAY
+
     if (isPaused) {
         SDL_RenderCopy(renderer, pauseTexture, nullptr, nullptr);
     }
@@ -570,7 +571,7 @@ void Game::saveGame() {
         saveFile << "playerX " << playerTransform.position.x << "\n";
         saveFile << "playerY " << playerTransform.position.y << "\n";
 
-        // Save enemy positions
+        // SAVE ENEMY
         for (auto& col : Game::colliders) {
             if (col->tag == "enemy" && col->entity->isActive()) {
                 auto& enemyTransform = col->entity->getComponent<TransformComponent>();
@@ -614,7 +615,7 @@ void Game::loadGame() {
 
     std::cout << "Save file loaded.\n";
 
-    // Apply loaded values
+
     petCount = loadedPetCount;
     storedPets = loadedStoredPets;
     heartCount = loadedHeartCount;
@@ -623,24 +624,24 @@ void Game::loadGame() {
 
     inMenu = false;
 
-    // Start fresh
+    // ZACNES NA NOVO
     initializeGame();
 
-    // Remove all default enemies that were spawned
+    // IZBRISES VSE ENEMIJE
     for (auto& col : Game::colliders) {
         if (col->tag == "enemy") {
             col->entity->destroy();
         }
     }
 
-    // Re-spawn loaded enemies
+    // RESPAWNAS LOADANE
     for (const auto& pos : enemyPositions) {
         spawnEnemy(manager, pos.x, pos.y);
     }
 }
 
 
-// Modify the clean function to clean up menu resources
+
 void Game::clean() {
     recorder.end();
     if (menuTexture) {

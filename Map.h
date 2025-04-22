@@ -10,7 +10,7 @@ public:
     void LoadMap();
     void DrawMap();
 
-    // New method to create wall colliders
+    // NOVA METODA ZA WALL COLLIDERJE
     void CreateWallColliders(Manager& manager);
     int getTile(int row, int col) const {
         return map[row][col];

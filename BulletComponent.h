@@ -5,34 +5,33 @@
 #include "ESC/ColliderComponent.h"
 #include "Vector2D.h"
 #include "Collision.h"
-#include "Game.h"           // for Game::colliders
-#include <SDL.h>            // for SDL_GetTicks()
+#include "Game.h"
+#include <SDL.h>
 #include <cmath>
 #include <iostream>
 
 class BulletComponent : public Component {
 public:
-    Vector2D direction;    // Normalized direction vector
-    float    speed;        // pixels per frame
+    Vector2D direction;
+    float    speed;
     float    distanceTraveled = 0.0f;
-    float    maxDistance;  // in pixels
+    float    maxDistance;
 
     BulletComponent(const Vector2D& dir, float spd, float maxDist)
       : direction(dir), speed(spd), maxDistance(maxDist)
     {}
 
     void init() override {
-        // enforce 1 s cooldown between bullets
         static Uint32 lastShotTime = 0;
         Uint32 now = SDL_GetTicks();
         if (now - lastShotTime < 700) {
-            // too soon — cancel this bullet
+            // DELAY
             entity->destroy();
             return;
         }
         lastShotTime = now;
 
-        // ensure we have a transform & collider
+        // PREVERIMO CE IMAMO TRANSFORM COLLIDER
         if (!entity->hasComponent<TransformComponent>()) {
             entity->addComponent<TransformComponent>();
         }
@@ -44,24 +43,24 @@ public:
     void update() override {
         auto& tx = entity->getComponent<TransformComponent>();
 
-        // remember old pos
+        // STARA POZICIJA
         float oldX = tx.position.x;
         float oldY = tx.position.y;
 
-        // move
+        // PREMAKNES
         tx.position.x += direction.x * speed;
         tx.position.y += direction.y * speed;
 
-        // accumulate distance
+        // DOLZINA
         float dx = tx.position.x - oldX;
         float dy = tx.position.y - oldY;
         distanceTraveled += std::sqrt(dx*dx + dy*dy);
 
-        // update collider
+        // UPDATAS COLLIDERJE
         auto& bc = entity->getComponent<ColliderComponent>();
         bc.update();
 
-        // collide with walls
+        // CE SE COLLIDA Z ZIDOM
         for (auto& colPtr : Game::colliders) {
             if (colPtr->tag == "wall" && Collision::AABB(bc, *colPtr)) {
                 entity->destroy();
@@ -69,7 +68,7 @@ public:
             }
         }
 
-        // collide with enemies
+        // CE SE COLLIDA Z ENEMIJOM
         for (auto& colPtr : Game::colliders) {
             if (colPtr->tag == "enemy"
              && colPtr->entity->isActive()
@@ -81,7 +80,7 @@ public:
             }
         }
 
-        // timeout
+
         if (distanceTraveled >= maxDistance) {
             entity->destroy();
         }

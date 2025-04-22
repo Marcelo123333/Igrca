@@ -9,9 +9,9 @@ public:
     Replayer(const std::string& filename);
     ~Replayer();
 
-    bool begin();                // open & parse file
-    bool next(FrameData& out);   // fill out next frame, return false at EOF
-    void end();                  // close file
+    bool begin();
+    bool next(FrameData& out);
+    void end();
 
 private:
     std::ifstream in;

@@ -33,10 +33,10 @@ public:
         int baseH = transform->height * transform->scale;
 
         if (tag == "enemy") {
-            // Use a shrink factor to reduce the hitbox size relative to the sprite size.
-            float factor = 0.6f; // enemy hitbox is 60% of the visual size
+            // ZMANSAS HITBOX GLEDENA SPRITE
+            float factor = 0.6f; // 60% NJEGOVE VELIKOSTI
 
-            // Calculate offsets to re-center the reduced hitbox within the sprite
+            // IZRAČUNAŠ OFFSET DA LAHKO DOBIS NJEGOV NOV HITBOX
             int offsetX = static_cast<int>(baseW * (1 - factor) / 2);
             int offsetY = static_cast<int>(baseH * (1 - factor) / 2);
 
@@ -45,7 +45,6 @@ public:
             collider.w = static_cast<int>(baseW * factor);
             collider.h = static_cast<int>(baseH * factor);
         } else {
-            // Default behavior: use full size
             collider.x = baseX;
             collider.y = baseY;
             collider.w = baseW;

@@ -7,18 +7,13 @@
 #include <SDL.h>
 #include <vector>
 
-// Forward declaration of Entity
+
 class Entity;
 extern Entity* player;
 
 class EnemyAIComponent : public Component {
 public:
-    // Constructor parameters:
-    //  range: vision distance (pixels)
-    //  followSpd: speed when chasing the player
-    //  wanderSpd: speed when wandering randomly
-    //  radius: max wander distance from spawn point
-    //  interval: ms between wander direction changes
+
     EnemyAIComponent(float range = 320.0f,
                      float followSpd = 0.3f,
                      float wanderSpd = 0.4f,
@@ -29,25 +24,25 @@ public:
     void update() override;
 
 private:
-    // Chase behavior
+    // CHASE
     float sightRange;
     float followSpeed;
 
-    // Wander behavior
+    // WANDER
     float wanderSpeed;
     float wanderRadius;
     Uint32 lastWanderChange;
     Uint32 wanderInterval;
     Vector2D wanderDirection;
 
-    // Spawn origin for clamping wander
+    // CENTER SPAWNA
     Vector2D spawnCenter;
 
-    // Helper: line-of-sight vs a rectangular collider
+    // LOS
     bool lineIntersectsRect(const Vector2D& p1,
                             const Vector2D& p2,
                             const SDL_Rect& rect);
 
-    // Wander logic with wall collision detection
+    // WANDER Z WALL COLLISIONOM
     void wander(TransformComponent& tx);
 };

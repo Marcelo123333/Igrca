@@ -5,7 +5,7 @@
 #include <ctime>
 #include <cmath>
 
-// Helper to generate a random unit vector
+
 static Vector2D randomUnitVector() {
     float angle = (std::rand() / (float)RAND_MAX) * 2.0f * M_PI;
     return { std::cos(angle), std::sin(angle) };
@@ -40,7 +40,7 @@ void EnemyAIComponent::update() {
         tx.position.y + tx.height * tx.scale / 2
     };
 
-    // Chase logic
+    // LOVLJENJE
     if (player) {
         auto& ptx = player->getComponent<TransformComponent>();
         Vector2D pCenter{
@@ -69,7 +69,7 @@ void EnemyAIComponent::update() {
         }
     }
 
-    // Wander logic
+    // WANDER LOGIKA
     wander(tx);
 }
 
@@ -111,7 +111,7 @@ void EnemyAIComponent::wander(TransformComponent& tx) {
     Vector2D bestDir = wanderDirection;
     SDL_Rect baseRect = cc.collider;
     bool found = false;
-    // try up to 8 random directions including original
+    // PROBAŠ 8 SMERI SKUPAJ Z ORIGINALNO
     for (int i = 0; i < 8; ++i) {
         Vector2D dir = (i == 0 ? wanderDirection : randomUnitVector());
         SDL_Rect nextRect = baseRect;
@@ -133,7 +133,7 @@ void EnemyAIComponent::wander(TransformComponent& tx) {
     }
 
     if (!found) {
-        // stuck: don't move
+        // ČE JE STUCK SE NAJ NE PREMIKA (VARNOST)
         tx.velocity.x = 0;
         tx.velocity.y = 0;
         return;
@@ -143,7 +143,7 @@ void EnemyAIComponent::wander(TransformComponent& tx) {
     tx.velocity.x = bestDir.x * wanderSpeed;
     tx.velocity.y = bestDir.y * wanderSpeed;
 
-    // clamp within spawn radius
+    // V NEKEM SPAWN RADIUSU
     Vector2D offset{ tx.position.x - spawnCenter.x,
                      tx.position.y - spawnCenter.y };
     float d = std::sqrt(offset.x*offset.x + offset.y*offset.y);

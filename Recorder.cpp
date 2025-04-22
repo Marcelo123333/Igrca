@@ -11,9 +11,7 @@ Recorder::~Recorder() {
 
 void Recorder::begin() {
     out.open(fname, std::ios::out);
-    // write header (optional)
     out << "P.x,P.y";
-    // we won't know how many enemies/pets ahead of time, so we'll just write counts at front of each line
     out << ",E.count";
     out << ",Pet.count";
     out << "\n";
@@ -22,16 +20,16 @@ void Recorder::begin() {
 void Recorder::recordFrame(const FrameData& f) {
     if (!out.is_open()) return;
 
-    // player, enemy‑count, pet‑count (unchanged)…
+
     out << f.player.x << "," << f.player.y << ","
         << f.enemies.size() << "," << f.pets.size();
 
-    // enemy positions…
+    // POZICIJA ENEMIJA
     for (auto& e : f.enemies) out << "," << e.x << "," << e.y;
-    // pet positions…
+    // POZICIJA PETA
     for (auto& p : f.pets)    out << "," << p.x << "," << p.y;
 
-    // now bullets
+    // METKI
     out << "," << f.bullets.size();
     for (auto& b : f.bullets) out << "," << b.x << "," << b.y;
 

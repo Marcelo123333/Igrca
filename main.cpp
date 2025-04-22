@@ -7,7 +7,7 @@
 
 
 int main(int argc, char* argv[]) {
-    // Optionally allocate a console (if you need one)
+
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
     freopen("CONIN$", "r", stdin);
@@ -16,11 +16,11 @@ int main(int argc, char* argv[]) {
     game->init("Igrica", 800, 640, false);
 
     const int FPS = 60;
-    const int frameDelay = 1000 / FPS; // milliseconds per frame
+    const int frameDelay = 1000 / FPS;
 
     Uint32 frameStart;
     int frameTime;
-    // Main game loop
+
     while (game->running()) {
         frameStart = SDL_GetTicks();
         game->handleEvents();

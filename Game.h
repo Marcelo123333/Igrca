@@ -70,7 +70,7 @@ private:
 
 #ifndef GAME_H
 #define GAME_H
-// ... rest of header
+
 #endif // GAME_H
 
 
